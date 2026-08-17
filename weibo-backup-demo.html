@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Weibo Backup — 个人微博备份工具</title>
+<style>
+/* ============================================================
+   Design V2 × E-Ink Paper — matching globals.css exactly
+   ============================================================ */
+:root {
+  --canvas: #f5f3ee;
+  --card: #fcfbf8;
+  --border: #e6e1d8;
+  --hairl: #f0ede6;
+  --wash: #f8f6f2;
+  --gold: #c2884a;
+  --gold-dk: #9a6428;
+  --gold-lt: #e0c898;
+  --gold-wash: #f9f1e2;
+  --gold-glow: rgba(194,136,74,0.12);
+  --ink: #1e1810;
+  --ink-soft: #4a4035;
+  --muted: #7a7065;
+  --faint: #b0a89c;
+  --sage: #6b8b6e;
+  --terracotta: #c0765c;
+  --slate: #6b7f8e;
+  --blue: #6e8aa0;
+  --amber: #b8863e;
+  --green: #5a8a5e;
+  --red: #c06658;
+  --r-xs: 6px;
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --sh-card: 0 1px 3px rgba(30,24,16,0.035), 0 0 0 1px rgba(30,24,16,0.02);
+  --sh-raised: 0 2px 8px rgba(30,24,16,0.05), 0 0 0 1px rgba(30,24,16,0.03);
+  --sh-over: 0 6px 20px rgba(30,24,16,0.08), 0 0 0 1px rgba(30,24,16,0.04);
+  --font-sans: -apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,sans-serif;
+  --font-body: -apple-system,BlinkMacSystemFont,'PingFang SC','HarmonyOS Sans SC','MiSans','Microsoft YaHei',system-ui,sans-serif;
+  --font-serif: Georgia,'Songti SC','SimSun',serif;
+  --content-max: 680px;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;-webkit-font-smoothing:antialiased}
+body{
+  font-family:var(--font-body);background:var(--canvas);color:var(--ink);
+  line-height:1.7;min-height:100vh;position:relative;overflow-x:hidden;
+}
+/* Paper texture */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:0.028;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+/* Ambient light */
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 70% 50% at 15% 5%, rgba(107,127,142,0.04) 0%, transparent 60%), radial-gradient(ellipse 50% 40% at 85% 90%, rgba(194,136,74,0.055) 0%, transparent 60%);
+}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px;border-radius:var(--r-xs)}
+::selection{background:var(--gold-wash);color:var(--ink)}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--faint)}
+a{color:var(--blue);text-decoration:none}
+a:hover{text-decoration:underline;text-underline-offset:2px}
+
+.page-container{position:relative;z-index:1;max-width:var(--content-max);margin:0 auto;padding:0 24px 80px}
+@media(max-width:640px){.page-container{padding:0 16px 96px}}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.skeleton{
+  background:linear-gradient(90deg,var(--hairl)25%,var(--border)50%,var(--hairl)75%);
+  background-size:200% 100%;animation:shimmer 1.6s ease-in-out infinite;border-radius:var(--r-xs);
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Nav — exact replica */
+.app-nav{
+  position:sticky;top:0;z-index:20;padding:14px 0;
+  background:color-mix(in srgb,var(--canvas)92%,transparent);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  margin-bottom:0;
+}
+.app-nav-inner{
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
+}
+.nav-brand{
+  display:flex;align-items:center;gap:10px;font-family:var(--font-sans);
+  font-weight:600;font-size:1.1rem;color:var(--ink);text-decoration:none;
+  letter-spacing:-0.01em;cursor:default;
+}
+.nav-pills{
+  display:flex;gap:2px;background:var(--hairl);border-radius:var(--r-sm);padding:3px;
+}
+.nav-pill{
+  display:flex;align-items:center;gap:6px;padding:7px 16px;border-radius:var(--r-xs);
+  font-size:0.875rem;font-weight:500;color:var(--muted);background:transparent;
+  border:none;cursor:pointer;text-decoration:none;
+  transition:color 150ms,background 150ms,box-shadow 150ms;white-space:nowrap;
+  font-family:var(--font-body);
+}
+.nav-pill:hover{color:var(--ink-soft)}
+.nav-pill.active{color:var(--ink);background:var(--card);box-shadow:var(--sh-card)}
+.nav-pill svg{width:16px;height:16px;flex-shrink:0}
+
+/* Page switching */
+.page{display:none}
+.page.active{display:block}
+
+/* Filter card */
+.filter-card{background:var(--card);border-radius:var(--r-lg);padding:18px 22px;box-shadow:var(--sh-card);margin-bottom:14px}
+.filter-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px}
+.filter-row:last-child{margin-bottom:0}
+
+/* Custom Select */
+.cusel-wrap{position:relative;min-width:130px}
+.cusel-btn{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;
+  font-family:var(--font-body);font-size:0.875rem;padding:8px 10px;
+  border:1px solid var(--border);border-radius:var(--r-xs);background:var(--canvas);
+  color:var(--ink);cursor:pointer;outline:none;white-space:nowrap;
+}
+.cusel-btn:hover{border-color:var(--gold)}
+.cusel-btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cusel-dropdown{
+  position:absolute;top:100%;left:0;margin-top:4px;background:var(--card);
+  border-radius:var(--r-sm);box-shadow:var(--sh-over);border:1px solid var(--border);
+  min-width:100%;z-index:30;max-height:240px;overflow:auto;
+}
+.cusel-opt{
+  display:block;width:100%;text-align:left;padding:8px 12px;border:none;
+  background:transparent;font-family:var(--font-body);font-size:0.84rem;
+  color:var(--ink-soft);cursor:pointer;white-space:nowrap;
+}
+.cusel-opt:hover{background:var(--hairl)}
+.cusel-opt.sel{background:var(--hairl);color:var(--ink)}
+
+/* Segmented control */
+.seg-ctrl{display:flex;gap:1px;background:var(--hairl);border-radius:var(--r-xs);padding:2px}
+.seg-btn{
+  display:flex;align-items:center;gap:5px;padding:6px 14px;
+  border-radius:calc(var(--r-xs) - 1px);border:none;
+  background:transparent;color:var(--muted);
+  font-size:0.84rem;font-family:var(--font-body);cursor:pointer;
+  transition:color 150ms,background 150ms,box-shadow 150ms;white-space:nowrap;
+}
+.seg-btn:hover{color:var(--ink-soft)}
+.seg-btn.active{background:var(--card);color:var(--ink);box-shadow:var(--sh-card)}
+.seg-btn svg{width:14px;height:14px;flex-shrink:0}
+
+/* Search input */
+.search-wrap{position:relative;flex:1;min-width:160px;max-width:260px;margin-left:auto}
+.search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.search-input{
+  font-family:var(--font-body);font-size:0.875rem;padding:8px 12px 8px 32px;width:100%;
+  border:1px solid var(--border);border-radius:var(--r-xs);background:var(--canvas);
+  color:var(--ink);outline:none;
+}
+.search-input:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-glow)}
+
+/* DatePicker */
+.dp-wrap{position:relative}
+.dp-trigger{
+  display:flex;align-items:center;gap:6px;font-family:var(--font-body);font-size:0.875rem;
+  padding:8px 10px;min-width:130px;border:1px solid var(--border);border-radius:var(--r-xs);
+  background:var(--canvas);color:var(--ink);cursor:pointer;outline:none;white-space:nowrap;
+}
+.dp-trigger:hover{border-color:var(--gold)}
+.dp-drop{
+  position:absolute;top:100%;left:0;margin-top:4px;z-index:40;
+  background:var(--card);border-radius:var(--r-md);padding:14px;width:260px;
+  box-shadow:var(--sh-over);border:1px solid var(--border);
+}
+.dp-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.dp-nav button{width:28px;height:28px;border:none;background:none;color:var(--ink-soft);cursor:pointer;border-radius:var(--r-xs);display:flex;align-items:center;justify-content:center;font-size:1rem}
+.dp-nav button:hover{background:var(--hairl)}
+.dp-nav select{font-family:var(--font-body);font-size:0.84rem;font-weight:600;color:var(--ink);border:none;background:transparent;cursor:pointer;outline:none}
+.dp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.dp-day-hd{text-align:center;font-size:0.68rem;font-weight:500;color:var(--muted);padding:4px 0}
+.dp-day{
+  width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;
+  border:none;border-radius:var(--r-xs);background:transparent;
+  color:var(--ink-soft);font-family:var(--font-body);font-size:0.8rem;cursor:pointer;
+}
+.dp-day:hover{background:var(--hairl)}
+.dp-day.today{color:var(--gold-dk);font-weight:600}
+.dp-day.sel{background:var(--gold);color:#fff;font-weight:600}
+.dp-day.empty{cursor:default}
+.dp-actions{display:flex;gap:8px;margin-top:10px;padding-top:8px;border-top:1px solid var(--hairl)}
+.dp-actions button{
+  flex:1;padding:6px 0;font-family:var(--font-body);font-size:0.78rem;font-weight:500;
+  cursor:pointer;border-radius:var(--r-xs);
+}
+.dp-btn-clear{border:1px solid var(--border);background:transparent;color:var(--muted)}
+.dp-btn-clear:hover{background:var(--hairl)}
+.dp-btn-today{border:none;background:var(--gold-wash);color:var(--gold-dk)}
+.dp-btn-today:hover{background:var(--gold-lt)}
+
+/* Stats bar */
+.stats-bar{
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
+  gap:10px;font-size:0.84rem;color:var(--muted);padding:0 4px;margin-bottom:22px;
+}
+.stats-bar strong{color:var(--ink-soft)}
+
+/* Export button */
+.export-wrap{position:relative}
+.export-btn{
+  display:flex;align-items:center;gap:4px;font-family:var(--font-body);font-size:0.84rem;
+  font-weight:500;padding:6px 14px;border:1px solid var(--border);border-radius:var(--r-sm);
+  background:var(--card);color:var(--ink-soft);cursor:pointer;
+}
+.export-btn:hover{border-color:var(--gold)}
+.export-menu{
+  position:absolute;top:100%;right:0;margin-top:4px;background:var(--card);
+  border-radius:var(--r-sm);box-shadow:var(--sh-over);border:1px solid var(--border);
+  min-width:170px;z-index:30;overflow:hidden;
+}
+.export-item{
+  display:block;width:100%;text-align:left;padding:9px 14px;border:none;
+  background:transparent;font-family:var(--font-body);font-size:0.84rem;
+  color:var(--ink-soft);cursor:pointer;
+}
+.export-item:hover{background:var(--hairl)}
+
+/* Post Card */
+.post-card{
+  background:var(--card);border-radius:var(--r-md);padding:20px 24px;
+  box-shadow:var(--sh-card);margin-bottom:12px;cursor:pointer;
+  transition:box-shadow 250ms var(--ease-out);
+}
+.post-card:hover{box-shadow:var(--sh-raised)}
+.post-hd{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.post-avatar{
+  width:30px;height:30px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:0.8rem;font-weight:600;font-family:var(--font-sans);
+}
+.post-meta{flex:1;min-width:0}
+.post-name{font-size:0.875rem;font-weight:600;color:var(--ink);line-height:1.35}
+.post-time{font-size:0.78rem;color:var(--muted);line-height:1.35}
+.post-badges{display:flex;gap:6px}
+.badge{
+  display:inline-flex;align-items:center;gap:4px;font-size:0.72rem;
+  padding:3px 9px;border-radius:99px;font-weight:500;white-space:nowrap;
+}
+.badge svg{width:11px;height:11px;flex-shrink:0}
+.badge-original{background:var(--gold-wash);color:var(--gold-dk)}
+.badge-repost{background:#edf0f4;color:var(--slate)}
+.badge-long{background:#f5f0e9;color:var(--amber)}
+.post-content{
+  font-size:0.95rem;line-height:1.78;color:var(--ink-soft);
+  margin-bottom:14px;white-space:pre-wrap;word-break:break-word;
+}
+.post-repost-embed{
+  background:var(--hairl);border-radius:var(--r-sm);padding:14px 18px;
+  margin-bottom:12px;border-left:3px solid var(--border);cursor:pointer;
+}
+.post-repost-embed .rlabel{
+  font-size:0.84rem;color:var(--muted);margin-bottom:6px;
+  display:flex;align-items:center;gap:6px;
+}
+.post-repost-embed .rlabel strong{color:var(--ink-soft);font-weight:600}
+.post-repost-embed .rtext{
+  font-size:0.88rem;color:var(--muted);line-height:1.65;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+.post-repost-embed .rtext.expanded{display:block;-webkit-line-clamp:unset}
+.post-repost-embed .rtoggle{
+  font-size:0.78rem;color:var(--gold);margin-top:6px;font-weight:500;
+  display:flex;align-items:center;gap:4px;
+}
+.post-footer{
+  display:flex;align-items:center;gap:14px;font-size:0.8rem;color:var(--muted);
+  padding-top:10px;border-top:1px solid var(--hairl);
+}
+.post-footer svg{width:14px;height:14px;flex-shrink:0}
+.post-source{display:flex;align-items:center;gap:4px;margin-right:auto}
+.post-stat{display:flex;align-items:center;gap:3px}
+
+/* Year divider */
+.year-div{
+  display:flex;align-items:center;gap:16px;padding:14px 0 4px;
+}
+.year-div span{
+  font-family:var(--font-sans);font-size:0.78rem;font-weight:600;
+  color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;white-space:nowrap;
+}
+.year-div::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* Pagination */
+.pager{
+  display:flex;justify-content:flex-end;align-items:center;gap:6px;
+  padding:12px 0;flex-wrap:wrap;
+}
+.pager-btn{
+  display:flex;align-items:center;justify-content:center;min-width:36px;height:36px;
+  padding:0 10px;border-radius:var(--r-xs);border:1px solid var(--border);
+  background:var(--card);font-family:var(--font-body);font-size:0.875rem;cursor:pointer;
+  color:var(--ink-soft);
+}
+.pager-btn:hover:not(:disabled){border-color:var(--gold);color:var(--gold-dk)}
+.pager-btn.active{background:var(--gold-wash);border-color:var(--gold);color:var(--gold-dk);font-weight:600}
+.pager-btn:disabled{opacity:0.4;cursor:default}
+.pager-dots{color:var(--muted);padding:0 2px;font-size:0.8rem}
+.pager-jump{display:flex;align-items:center;gap:4px;margin-left:8px}
+.pager-jump input{
+  width:52px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r-xs);
+  background:var(--card);color:var(--ink);font-family:var(--font-body);font-size:0.8rem;
+  text-align:center;outline:none;
+}
+.pager-jump input:focus{border-color:var(--gold)}
+
+/* Shuffle — dual column */
+.shuffle-status{display:flex;align-items:center;justify-content:space-between;font-size:0.82rem;color:var(--muted);padding:0 4px;margin-bottom:14px}
+.shuffle-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.shuffle-col{display:flex;flex-direction:column;gap:10px}
+.shuffle-card{
+  border-radius:var(--r-sm);overflow:hidden;cursor:pointer;
+  transition:box-shadow 250ms var(--ease-out);
+}
+.shuffle-card:hover{box-shadow:var(--sh-over)}
+.shuffle-card .sc-body{padding:14px 16px}
+.shuffle-card .sc-name{
+  font-size:0.72rem;color:var(--muted);margin-bottom:4px;
+  display:flex;align-items:center;gap:4px;
+}
+.shuffle-card .sc-avatar{
+  width:16px;height:16px;border-radius:50%;display:inline-flex;
+  align-items:center;justify-content:center;color:#fff;font-size:0.6rem;
+  font-weight:600;font-family:var(--font-sans);flex-shrink:0;
+}
+.shuffle-card .sc-content{
+  font-size:0.9rem;line-height:1.65;color:var(--ink);
+  display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;
+  overflow:hidden;word-break:break-word;margin-bottom:6px;
+}
+.shuffle-card .sc-foot{
+  display:flex;align-items:center;gap:8px;font-size:0.7rem;color:var(--muted);
+}
+.shuffle-loadmore{text-align:center;padding:24px 0}
+.shuffle-loadmore button{
+  font-family:var(--font-body);font-size:0.84rem;font-weight:500;padding:8px 28px;
+  border:1px solid var(--border);border-radius:var(--r-sm);background:var(--card);
+  color:var(--ink-soft);cursor:pointer;
+}
+.shuffle-loadmore button:hover{border-color:var(--gold)}
+
+/* On This Day selects */
+.otd-selects{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.otd-selects select{
+  font-family:var(--font-body);font-size:0.875rem;padding:6px 10px;
+  border:1px solid var(--border);border-radius:var(--r-xs);background:var(--canvas);
+  color:var(--ink);outline:none;cursor:pointer;
+}
+.otd-selects select:focus{border-color:var(--gold)}
+
+/* Sync page */
+.sync-card{background:var(--card);border-radius:var(--r-lg);padding:20px 22px;box-shadow:var(--sh-card);margin-bottom:14px}
+.sync-card h3{font-family:var(--font-sans);font-size:0.95rem;font-weight:600;color:var(--ink);margin-bottom:14px}
+.sync-card label{display:block;font-size:0.84rem;color:var(--ink-soft);margin-bottom:6px}
+.sync-status-row{display:flex;gap:20px;flex-wrap:wrap;font-size:0.85rem;color:var(--muted);margin-bottom:16px}
+.sync-status-row strong{color:var(--ink-soft)}
+.sync-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn-sync{
+  font-family:var(--font-body);font-size:0.9rem;font-weight:500;padding:11px 32px;
+  border-radius:var(--r-sm);border:none;cursor:pointer;display:inline-flex;
+  align-items:center;gap:8px;
+}
+.btn-sync.start{background:var(--gold);color:#fff}
+.btn-sync.start:hover{background:var(--gold-dk)}
+.btn-sync.cancel{background:transparent;color:var(--red);border:1px solid var(--red)}
+.btn-sync:disabled{background:var(--hairl);color:var(--muted);cursor:default}
+.sync-error-card{background:var(--card);border-radius:var(--r-lg);padding:16px 22px;box-shadow:var(--sh-card);margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.sync-table{width:100%;font-size:0.84rem;border-collapse:collapse}
+.sync-table th{padding:8px 12px;text-align:left;color:var(--muted);font-weight:500;border-bottom:1px solid var(--hairl)}
+.sync-table td{padding:8px 12px;color:var(--ink-soft);border-bottom:1px solid var(--hairl)}
+.sync-table td.num{text-align:right}
+.sync-table td.new{text-align:right;color:var(--green);font-weight:600}
+.sync-table td.ctr{text-align:center}
+.status-badge{font-size:0.75rem;padding:2px 8px;border-radius:99px;font-weight:500}
+.status-ok{color:var(--green);background:#eef5ef}
+.status-fail{color:var(--red);background:#fdf0ee}
+
+/* Account card */
+.acct-card{
+  background:var(--card);border-radius:var(--r-md);padding:16px 18px;
+  box-shadow:var(--sh-card);margin-bottom:12px;
+  display:flex;align-items:center;gap:14px;
+}
+.acct-avatar{
+  width:48px;height:48px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:1.2rem;font-weight:600;font-family:var(--font-sans);
+}
+.acct-body{flex:1;min-width:0}
+.acct-name{font-size:0.95rem;font-weight:600;color:var(--ink)}
+.acct-sub{font-size:0.78rem;color:var(--muted)}
+.acct-sub2{font-size:0.75rem;color:var(--faint);margin-top:2px}
+.acct-actions{display:flex;gap:6px;flex-shrink:0}
+
+/* Buttons */
+.btn-sm{
+  font-family:var(--font-body);font-size:0.76rem;font-weight:500;
+  padding:5px 14px;border-radius:var(--r-xs);
+  border:1px solid var(--border);background:var(--card);
+  color:var(--ink-soft);cursor:pointer;
+  display:inline-flex;align-items:center;gap:4px;transition:all 150ms;
+}
+.btn-sm:hover{border-color:var(--gold);color:var(--gold-dk)}
+.btn-sm.danger{color:var(--red);border-color:var(--red)}
+.btn-sm.danger:hover{background:var(--red);color:#fff}
+.btn-primary{
+  font-family:var(--font-body);font-size:0.84rem;font-weight:500;
+  padding:8px 20px;border-radius:var(--r-sm);border:none;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--gold);color:#fff;transition:background 200ms;
+}
+.btn-primary:hover{background:var(--gold-dk)}
+
+/* Modal */
+.modal-overlay{
+  position:fixed;inset:0;z-index:50;background:rgba(0,0,0,0.35);
+  display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.modal-card{
+  background:var(--card);border-radius:var(--r-lg);max-width:560px;width:100%;
+  max-height:85vh;overflow:auto;padding:24px;box-shadow:var(--sh-over);
+}
+.modal-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.modal-top span{font-size:0.84rem;color:var(--muted)}
+.modal-close{background:none;border:none;color:var(--muted);cursor:pointer;padding:4px;font-size:1.1rem}
+.modal-close:hover{color:var(--ink)}
+.modal-content-text{font-size:0.95rem;line-height:1.78;color:var(--ink-soft);white-space:pre-wrap;word-break:break-word}
+.modal-comments{margin-top:14px;padding-top:14px;border-top:1px solid var(--hairl)}
+.modal-comments h4{font-size:0.82rem;font-weight:600;color:var(--ink-soft);margin-bottom:10px}
+.comment-item{padding:8px 0;border-bottom:1px solid var(--hairl)}
+.comment-item:last-child{border-bottom:none}
+.comment-hd{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.comment-name{font-size:0.8rem;font-weight:600;color:var(--ink)}
+.comment-time{font-size:0.72rem;color:var(--muted)}
+.comment-likes{font-size:0.72rem;color:var(--muted);margin-left:auto}
+.comment-text{font-size:0.85rem;color:var(--ink-soft);line-height:1.6;white-space:pre-wrap;word-break:break-word}
+
+/* Inline select (on-this-day, sync account select) */
+.inline-select{
+  font-family:var(--font-body);font-size:0.875rem;padding:6px 10px;
+  border:1px solid var(--border);border-radius:var(--r-xs);background:var(--canvas);
+  color:var(--ink);outline:none;cursor:pointer;
+}
+.inline-select:focus{border-color:var(--gold)}
+
+/* Responsive */
+@media(max-width:500px){
+  .shuffle-grid{grid-template-columns:1fr}
+  .filter-row{flex-direction:column;align-items:stretch}
+  .search-wrap{max-width:100%;margin-left:0}
+  .nav-pill{padding:7px 10px;font-size:0.78rem;gap:3px}
+  .nav-pill svg{width:14px;height:14px}
+}
+</style>
+</head>
+<body>
+
+<!-- Page Container -->
+<div class="page-container" id="app">
+
+<!-- ============================================================
+     NAV — exact replica of nav.tsx
+     ============================================================ -->
+<nav class="app-nav">
+  <div class="app-nav-inner">
+    <span class="nav-brand">
+      Weibo Backup
+    </span>
+    <div class="nav-pills">
+      <button class="nav-pill active" data-tab="browse"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>浏览</button>
+      <button class="nav-pill" data-tab="shuffle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>随机刷</button>
+      <button class="nav-pill" data-tab="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>那年今日</button>
+      <button class="nav-pill" data-tab="sync"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>同步</button>
+      <button class="nav-pill" data-tab="accounts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>账号</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ============================================================
+     PAGE 1: Browse (posts/client.tsx replica)
+     ============================================================ -->
+<div class="page active" id="page-browse" style="padding-top:4px">
+
+  <!-- Filter Card -->
+  <div class="filter-card">
+    <div class="filter-row">
+      <div class="cusel-wrap" id="browse-acct-wrap"></div>
+      <div class="seg-ctrl" id="browse-type-ctrl"></div>
+    </div>
+    <div class="filter-row">
+      <div class="dp-wrap" id="browse-dp-from"></div>
+      <span style="font-size:0.84rem;color:var(--muted)">至</span>
+      <div class="dp-wrap" id="browse-dp-to"></div>
+      <div class="search-wrap" style="margin-left:auto">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input class="search-input" id="browse-search" type="search" placeholder="搜索微博内容...">
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Pagination -->
+  <div class="pager" id="browse-pager-top" style="display:none"></div>
+
+  <!-- Stats -->
+  <div class="stats-bar" id="browse-stats"></div>
+
+  <!-- Posts list -->
+  <div id="browse-list"></div>
+
+  <!-- Empty state -->
+  <div id="browse-empty" style="display:none;text-align:center;padding:80px 20px;color:var(--muted)">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 16px;opacity:0.5"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+    <h2 style="font-family:var(--font-sans);font-size:1.15rem;font-weight:600;color:var(--ink-soft);margin-bottom:8px">没有匹配的帖子</h2>
+    <p style="font-size:0.9rem">尝试调整筛选条件</p>
+  </div>
+
+  <!-- Bottom Pagination -->
+  <div class="pager" id="browse-pager-bottom" style="padding-top:4px;display:none"></div>
+</div>
+
+<!-- ============================================================
+     PAGE 2: Shuffle (shuffle/page.tsx replica)
+     ============================================================ -->
+<div class="page" id="page-shuffle" style="padding-top:4px">
+
+  <!-- Filter Card -->
+  <div class="filter-card">
+    <div class="filter-row">
+      <div class="cusel-wrap" id="shuffle-acct-wrap"></div>
+      <div class="seg-ctrl" id="shuffle-type-ctrl"></div>
+    </div>
+    <div class="filter-row">
+      <div class="dp-wrap" id="shuffle-dp-from"></div>
+      <span style="font-size:0.84rem;color:var(--muted)">至</span>
+      <div class="dp-wrap" id="shuffle-dp-to"></div>
+      <button style="margin-left:auto;display:flex;align-items:center;gap:5px;font-family:var(--font-body);font-size:0.84rem;font-weight:500;padding:6px 16px;border-radius:var(--r-sm);border:none;background:var(--gold);color:#fff;cursor:pointer" id="shuffle-reroll">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>换一批
+      </button>
+    </div>
+  </div>
+
+  <!-- Status -->
+  <div class="shuffle-status"><span id="shuffle-status-text">随机浏览中 · 已看 20 条</span></div>
+
+  <!-- Grid -->
+  <div class="shuffle-grid" id="shuffle-grid"><div class="shuffle-col" id="shuffle-col-l"></div><div class="shuffle-col" id="shuffle-col-r"></div></div>
+
+  <!-- Load more -->
+  <div class="shuffle-loadmore"><button id="shuffle-loadmore">加载更多</button></div>
+</div>
+
+<!-- ============================================================
+     PAGE 3: On This Day (on-this-day/page.tsx replica)
+     ============================================================ -->
+<div class="page" id="page-today" style="padding-top:4px">
+
+  <!-- Date card -->
+  <div class="filter-card">
+    <div class="otd-selects">
+      <select class="inline-select" id="today-month"></select>
+      <select class="inline-select" id="today-day"></select>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-bar" id="today-stats" style="display:none"></div>
+
+  <!-- Posts -->
+  <div id="today-list"></div>
+
+  <!-- Empty -->
+  <div id="today-empty" style="display:none;text-align:center;padding:80px 20px;color:var(--muted)">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 16px;opacity:0.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <p style="font-size:0.95rem" id="today-empty-msg">选择日期查看那年今日的微博</p>
+    <p style="font-size:0.84rem;margin-top:4px">试试选其他日期</p>
+  </div>
+</div>
+
+<!-- ============================================================
+     PAGE 4: Sync (sync/page.tsx replica)
+     ============================================================ -->
+<div class="page" id="page-sync" style="padding-top:4px">
+
+  <!-- Account select + status -->
+  <div class="sync-card">
+    <div style="margin-bottom:16px">
+      <label>选择账号</label>
+      <div class="cusel-wrap" id="sync-acct-wrap" style="min-width:180px"></div>
+    </div>
+    <div class="sync-status-row" id="sync-status-row">
+      <span>已备份: <strong id="sync-total">0</strong> 条</span>
+      <span id="sync-range"></span>
+      <span style="display:flex;align-items:center;gap:4px" id="sync-last"></span>
+    </div>
+    <div class="sync-actions">
+      <button class="btn-sync start" id="sync-start-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        一键同步
+      </button>
+      <button class="btn-sync cancel" id="sync-cancel-btn" style="display:none">取消</button>
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div class="sync-error-card" id="sync-error" style="display:none">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span style="font-size:0.875rem;color:var(--red)" id="sync-error-msg"></span>
+  </div>
+
+  <!-- History -->
+  <div class="sync-card">
+    <h3>同步历史</h3>
+    <div id="sync-history-content">
+      <p style="font-size:0.875rem;color:var(--muted);text-align:center;padding:20px 0">暂无同步记录</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     PAGE 5: Accounts (accounts/page.tsx replica)
+     ============================================================ -->
+<div class="page" id="page-accounts" style="padding-top:4px">
+  <div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+    <h2 style="font-family:var(--font-sans);font-size:1.1rem;font-weight:600;color:var(--ink)">账号管理</h2>
+    <button class="btn-primary" id="acct-add-btn">+ 添加账号</button>
+  </div>
+  <div id="acct-list"></div>
+</div>
+
+</div><!-- /page-container -->
+
+<!-- ============================================================
+     Post Detail Modal
+     ============================================================ -->
+<div id="post-modal" class="modal-overlay" style="display:none">
+  <div class="modal-card" id="modal-card"></div>
+</div>
+
+<script>
+// ============================================================
+// SVG ICON HELPERS (inline for reuse)
+// ============================================================
+const ICONS = {
+  pen: '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>',
+  repost: '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>',
+  fileText: '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>',
+  smartphone: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>',
+  repost14: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>',
+  msg14: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
+  heart14: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>',
+  heart11: '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>',
+  alert: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+  clock: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'
+};
+
+// ============================================================
+// DATA — 5 fictional accounts, NO real usernames
+// ============================================================
+const ACCOUNTS = [
+  { uid:"1000000001", nickname:"峡谷打工仔",   avatar_color:"#e07b5a", posts:1247, last_sync:"2026-08-09T22:15:00Z" },
+  { uid:"1000000002", nickname:"一碗甜水面",   avatar_color:"#6b8e7a", posts:389,  last_sync:"2026-08-09T21:42:00Z" },
+  { uid:"1000000003", nickname:"云雀叫了一整天", avatar_color:"#8a7bbf", posts:2103, last_sync:"2026-08-08T18:30:00Z" },
+  { uid:"1000000004", nickname:"豆乳盒子",     avatar_color:"#5b8fa8", posts:567,  last_sync:"2026-08-09T20:05:00Z" },
+  { uid:"1000000005", nickname:"山谷回音",     avatar_color:"#c2884a", posts:892,  last_sync:"2026-08-09T19:18:00Z" },
+];
+const acctMap = Object.fromEntries(ACCOUNTS.map(a=>[a.uid,a]));
+
+// ============================================================
+// POSTS — all fictional content, NO images, sorted newest-first
+// ============================================================
+const POSTS = [
+  // 2026
+  {uid:"1000000004",date:"2026-08-08",time:"23:14",content:"折腾了两个月的微博备份工具终于上线了。。。把十几年的碎碎念全部存进了自己的数据库。从2016翻到2026，有一种说不清的踏实感[淡淡的]",is_original:true,is_long_text:1,source:"Weibo Backup",reposts:3,comments:7,likes:28,repost_json:null,comments_data:[{author:"云雀叫了一整天",text:"这是什么好东西！！",time:"23:20"},{author:"峡谷打工仔",text:"求教程[兔子]",time:"23:35"}]},
+  {uid:"1000000001",date:"2026-08-03",time:"19:02",content:"翻到了2019年的微博，那个时候真的好敢说啊。。。现在收敛多了 也不知道是好是坏 Hhh",is_original:true,is_long_text:0,source:"Weibo Backup",reposts:0,comments:2,likes:15,repost_json:null,comments_data:[]},
+  {uid:"1000000003",date:"2026-07-22",time:"14:33",content:"北京的夏天真的太离谱了。。。出门五分钟融化掉的不只是妆还有意志力[泪] 空调是再生父母",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:1,comments:5,likes:22,repost_json:null,comments_data:[{author:"山谷回音",text:"伦敦今天也30度了 裂开",time:"14:40"}]},
+  {uid:"1000000005",date:"2026-07-15",time:"01:22",content:"夜深了还在读Turing的论文。。。每次看都觉得天才和普通人之间的鸿沟是真的存在。不是努力就能填的",is_original:true,is_long_text:1,source:"网页",reposts:0,comments:3,likes:11,repost_json:null,comments_data:[]},
+  {uid:"1000000004",date:"2026-06-30",time:"22:08",content:"半年过去了，翻了翻备份数据，好像什么都没做又好像做了很多。这么纠结的人生也是没谁了[思考]",is_original:true,is_long_text:0,source:"Weibo Backup",reposts:2,comments:4,likes:19,repost_json:null,comments_data:[]},
+  {uid:"1000000002",date:"2026-06-18",time:"09:45",content:"坚持锻炼第100天！虽然体重纹丝不动但至少精神状态好多了 Hhh 教练说我进步很大[兔子]",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:1,comments:6,likes:31,repost_json:null,comments_data:[]},
+  {uid:"1000000001",date:"2026-05-28",time:"03:17",content:"半夜失眠突然觉得人活着好累。。。不是那种想不开的累，就是觉得什么都要靠自己撑着[淡淡的]",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:4,likes:9,repost_json:null,comments_data:[]},
+  {uid:"1000000003",date:"2026-05-12",time:"16:50",content:"现在的状态大概belike: I really have to do something to prove my value... Otherwise I am totally worthless...没有价值 我凭啥[费解]",is_original:true,is_long_text:0,source:"网页",reposts:5,comments:12,likes:45,repost_json:null,comments_data:[{author:"豆乳盒子",text:"same。。。每天都在自我怀疑",time:"17:02"}]},
+  {uid:"1000000001",date:"2026-04-25",time:"20:33",content:"你们男的提供不了一点儿情绪价值[给你小心心] 这话可能有点地图炮但我就是要说",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:8,comments:22,likes:67,repost_json:null,comments_data:[{author:"云雀叫了一整天",text:"Hhhhh真相了",time:"20:40"}]},
+  {uid:"1000000005",date:"2026-04-08",time:"11:05",content:"家里的茉莉开了，香味飘满整个房间。在伦敦的时候从来没闻到过这个味道，回来之后反而觉得什么都新鲜[微风]",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:2,comments:8,likes:35,repost_json:null,comments_data:[]},
+  {uid:"1000000004",date:"2026-03-20",time:"15:12",content:"写了一天代码，看了三个小时论文，然后在沙发上躺了两小时发呆。这就是我的周末[哈欠]",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:2,likes:14,repost_json:null,comments_data:[]},
+  {uid:"1000000003",date:"2026-03-05",time:"01:44",content:"发现自己对亲密关系的恐惧本质上是怕失控。。。控制不了别人就干脆不开始了 这个逻辑好像哪里不对但又改不了",is_original:true,is_long_text:1,source:"网页",reposts:3,comments:9,likes:38,repost_json:null,comments_data:[{author:"山谷回音",text:"世另我",time:"01:51"}]},
+  {uid:"1000000001",date:"2026-02-14",time:"21:21",content:"情人节，和我的数据库一起过。真浪漫[可爱] 至少数据库不会莫名其妙不回消息",is_original:true,is_long_text:0,source:"Weibo Backup",reposts:1,comments:5,likes:21,repost_json:null,comments_data:[]},
+  {uid:"1000000002",date:"2026-02-01",time:"17:38",content:"2026年了还在为同一件事焦虑。。。我真是长进不大[费解] 但至少今年意识到了 也算进步吧",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:3,likes:10,repost_json:null,comments_data:[]},
+  {uid:"1000000005",date:"2026-01-18",time:"22:55",content:"新年flag：把微博全量备份完。几年前发的那些羞耻内容，该面对的还是要面对 Hhh",is_original:true,is_long_text:0,source:"网页",reposts:1,comments:3,likes:16,repost_json:null,comments_data:[]},
+  {uid:"1000000004",date:"2026-01-01",time:"00:12",content:"2026了。时间快得离谱。但回头看，每一年都留下了痕迹，挺好的[月亮]",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:2,likes:12,repost_json:null,comments_data:[]},
+  // 2025
+  {uid:"1000000005",date:"2025-12-20",time:"19:30",content:"翻到自己2022年写的备忘录：「我不想成为任何人，我只想成为我自己」。现在看依然是对的。谢谢当时的自己",is_original:true,is_long_text:0,source:"网页",reposts:2,comments:4,likes:26,repost_json:null,comments_data:[]},
+  {uid:"1000000001",date:"2025-12-03",time:"20:15",content:"冬天就是应该吃火锅啊！一个人吃也很开心，就是每次都会点多[馋嘴] 服务员已经认识我了",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:1,comments:6,likes:29,repost_json:null,comments_data:[{author:"豆乳盒子",text:"带我一个！",time:"20:25"}]},
+  {uid:"1000000003",date:"2025-11-15",time:"01:08",content:"被问到「你想要什么样的关系」，想了很久说「让我不需要假装的关系吧」。。。[淡淡的]",is_original:true,is_long_text:0,source:"网页",reposts:6,comments:15,likes:52,repost_json:null,comments_data:[{author:"峡谷打工仔",text:"这个要求太高了[泪]",time:"01:14"}]},
+  {uid:"1000000002",date:"2025-11-02",time:"10:22",content:"最近的快乐源泉：1. 把旧微博整理干净了 2. 阳光好的下午 3. 室友做的饭[兔子] 简单的快乐",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:0,comments:2,likes:18,repost_json:null,comments_data:[]},
+  {uid:"1000000004",date:"2025-10-18",time:"18:40",content:"每一次搬家都像一次人生重置。把不需要的东西扔掉，把重要的装箱。然后发现重要的东西越来越少了",is_original:true,is_long_text:0,source:"网页",reposts:4,comments:8,likes:41,repost_json:null,comments_data:[]},
+  {uid:"1000000003",date:"2025-10-05",time:"22:31",content:"性别这个东西真的好奇怪。。。有时候觉得自己什么都不是，有时候又觉得自己什么都是[思考]",is_original:true,is_long_text:0,source:"网页",reposts:3,comments:10,likes:33,repost_json:null,comments_data:[{author:"山谷回音",text:"[抱抱]",time:"22:35"}]},
+  {uid:"1000000001",date:"2025-09-22",time:"13:14",content:"秋分了，一年里最好的季节。但北京没有秋天，直接从夏天跳到冬天[淡淡的] 好想念南京的梧桐",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:1,comments:3,likes:20,repost_json:null,comments_data:[]},
+  {uid:"1000000005",date:"2025-09-10",time:"16:52",content:"把数据从各个平台迁到自己服务器上，掌控感比谈恋爱还爽 Hhh 至少数据不会背叛你",is_original:true,is_long_text:0,source:"网页",reposts:2,comments:4,likes:24,repost_json:null,comments_data:[]},
+  {uid:"1000000002",date:"2025-08-28",time:"20:05",content:"游泳的时候一直在想，水下的安静是不是就是死亡的感觉。然后呛了一口水，觉得活着还是挺好的[哈欠]",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:0,comments:3,likes:13,repost_json:null,comments_data:[]},
+  {uid:"1000000001",date:"2025-08-14",time:"18:50",content:"朋友问我为什么单身，我说可能是因为我太喜欢一个人待着了。她给了我一记白眼 Hhh",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:2,comments:8,likes:36,repost_json:null,comments_data:[]},
+  {uid:"1000000003",date:"2025-07-30",time:"02:11",content:"身体不是一个需要被解决的问题[思考] 这句话我对自己说了无数遍但还是没有真的接受",is_original:true,is_long_text:0,source:"网页",reposts:5,comments:11,likes:47,repost_json:null,comments_data:[{author:"豆乳盒子",text:"共勉[月亮]",time:"02:18"}]},
+  {uid:"1000000005",date:"2025-07-16",time:"15:30",content:"读完了一本讲数字身份的书。核心观点：互联网记忆很短，但数据库不会忘。这不就是我做备份的原因吗",is_original:true,is_long_text:1,source:"网页",reposts:1,comments:5,likes:22,repost_json:null,comments_data:[]},
+  {uid:"1000000002",date:"2025-06-28",time:"12:05",content:"夏天到了，又到了「穿什么都无所谓但穿什么都不舒服」的季节。热到怀疑人生[怒]",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:0,comments:2,likes:9,repost_json:null,comments_data:[]},
+  {uid:"1000000003",date:"2025-06-08",time:"14:20",content:"今天面试，对方问我的人生规划。我说活到明天就已经很了不起了。他好像不太满意这个答案[可爱]",is_original:true,is_long_text:0,source:"网页",reposts:7,comments:18,likes:63,repost_json:null,comments_data:[{author:"山谷回音",text:"Hhhhh笑死",time:"14:28"}]},
+  {uid:"1000000002",date:"2025-05-15",time:"07:42",content:"健身后每天像有多动症一样上蹿下跳 Hhh 但确实精神状态好多了[微风]",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:0,comments:3,likes:17,repost_json:null,comments_data:[]},
+  {uid:"1000000004",date:"2025-05-01",time:"10:10",content:"五一没有安排，在家瘫着。有时候觉得不出门才是真正的度假。外面人山人海有什么好的",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:1,likes:8,repost_json:null,comments_data:[]},
+  {uid:"1000000001",date:"2025-04-12",time:"22:50",content:"刚看完一部文艺片，哭了半小时。不是因为剧情，是因为突然觉得有人能理解你的感觉好遥远[泪]",is_original:true,is_long_text:0,source:"网页",reposts:3,comments:10,likes:42,repost_json:null,comments_data:[{author:"云雀叫了一整天",text:"[抱抱][抱抱][抱抱]",time:"22:58"}]},
+  {uid:"1000000005",date:"2025-03-25",time:"19:18",content:"伦敦的春天来得特别慢，三月了还在穿大衣。想念北京的春天和满天的柳絮[微风]",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:1,comments:4,likes:19,repost_json:null,comments_data:[]},
+  {uid:"1000000003",date:"2025-03-08",time:"11:33",content:"三八节。希望所有女性都不用活在别人的目光里。包括我自己[给你小心心]",is_original:true,is_long_text:0,source:"网页",reposts:4,comments:6,likes:39,repost_json:null,comments_data:[]},
+  {uid:"1000000002",date:"2025-02-14",time:"19:45",content:"一个人去吃火锅，服务员问我要不要放一只熊在对面。我说好。小熊陪了我两个小时[兔子]",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:5,comments:14,likes:58,repost_json:null,comments_data:[{author:"峡谷打工仔",text:"Hhhhh我也干过这事",time:"19:52"}]},
+  {uid:"1000000004",date:"2025-01-23",time:"08:38",content:"尤其是做自己喜欢的、真正想要的事情的时候，累也不觉得累。问题是找到那件事本身就很难",is_original:true,is_long_text:0,source:"网页",reposts:1,comments:2,likes:15,repost_json:null,comments_data:[]},
+  {uid:"1000000001",date:"2025-01-05",time:"16:20",content:"新的一年，旧的问题。但还是决定做点什么，哪怕只是备份完所有的微博[微风]",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:1,likes:11,repost_json:null,comments_data:[]},
+  // 2024
+  {uid:"1000000003",date:"2024-12-21",time:"23:59",content:"冬至。一个人在家煮了饺子。想起小时候家里包的饺子，皮薄馅大。回不去的不是味道，是那个人[月亮]",is_original:true,is_long_text:0,source:"网页",reposts:2,comments:5,likes:27,repost_json:null,comments_data:[]},
+  {uid:"1000000005",date:"2024-11-28",time:"17:05",content:"感恩节。伦敦没有火鸡，买了一盒炸鸡代替。感谢自己还活着，感谢还有朋友在远方惦记我",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:0,comments:3,likes:18,repost_json:null,comments_data:[]},
+  {uid:"1000000001",date:"2024-11-10",time:"02:30",content:"又在半夜翻前任的微博。这个习惯什么时候能改[淡淡的] 把微博备份下来就是为了这个吧其实 Hhh",is_original:true,is_long_text:0,source:"网页",reposts:1,comments:6,likes:16,repost_json:null,comments_data:[]},
+  {uid:"1000000002",date:"2024-10-15",time:"21:10",content:"好崩溃[泪] 今天工作出了个大bug 修了六个小时 现在只想躺平 明天再想吧",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:4,likes:12,repost_json:null,comments_data:[{author:"豆乳盒子",text:"pat pat 先去睡觉",time:"21:15"}]},
+  {uid:"1000000004",date:"2024-09-30",time:"18:22",content:"国庆前最后一天上班。办公室都空了，只有我和空调的声音。其实挺享受这种安静的",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:1,likes:10,repost_json:null,comments_data:[]},
+  {uid:"1000000003",date:"2024-09-15",time:"14:08",content:"最近在看一本讲心理学依恋理论的书，越看越觉得自己是回避型。。。道理都懂，改变太难了",is_original:true,is_long_text:1,source:"网页",reposts:2,comments:7,likes:25,repost_json:null,comments_data:[]},
+  {uid:"1000000001",date:"2024-08-22",time:"19:35",content:"今天吃了三顿饭！里程碑级别的成就[兔子] 最近胃口好多了 开心",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:0,comments:5,likes:23,repost_json:null,comments_data:[{author:"云雀叫了一整天",text:"太好了！",time:"19:38"}]},
+  {uid:"1000000005",date:"2024-08-04",time:"11:20",content:"Pride in London[彩虹] 第一次参加，人山人海。站在人群里突然觉得没那么孤独了。原来有这么多人",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:3,comments:8,likes:44,repost_json:null,comments_data:[]},
+  {uid:"1000000002",date:"2024-07-19",time:"22:40",content:"夏天就应该吃西瓜。切成两半用勺子挖着吃，追剧追到睡着。周末的终极形态",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:1,comments:2,likes:14,repost_json:null,comments_data:[]},
+  {uid:"1000000004",date:"2024-06-25",time:"13:15",content:"同事离职了，说要去大理开民宿。羡慕这种勇气，但我知道自己做不来。安稳对我来说太重要了",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:3,likes:12,repost_json:null,comments_data:[]},
+  {uid:"1000000003",date:"2024-06-01",time:"09:50",content:"儿童节。想起小时候的自己，那时候还不知道长大后会有那么多烦恼。但其实小时候也有小时候的难处",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:2,likes:11,repost_json:null,comments_data:[]},
+  {uid:"1000000001",date:"2024-05-12",time:"20:05",content:"母亲节。打了电话回家，妈妈问我什么时候领对象回去。我说快了快了。快了是多久？大概是下辈子吧[允悲]",is_original:true,is_long_text:0,source:"网页",reposts:2,comments:8,likes:34,repost_json:null,comments_data:[{author:"豆乳盒子",text:"同款妈妈[泪]",time:"20:12"}]},
+  // 2023
+  {uid:"1000000005",date:"2023-12-25",time:"00:01",content:"圣诞快乐。一个人在宿舍看Love Actually。每年都看，每年都哭。不是因为感动，是因为知道自己可能永远不会有电影里的那种爱情[淡淡的]",is_original:true,is_long_text:1,source:"网页",reposts:1,comments:4,likes:20,repost_json:null,comments_data:[]},
+  {uid:"1000000002",date:"2023-11-11",time:"23:59",content:"双十一什么都没买。省钱也是一种消费 Hhh 清空购物车不如清空焦虑",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:2,likes:10,repost_json:null,comments_data:[]},
+  {uid:"1000000003",date:"2023-10-28",time:"03:15",content:"凌晨三点还在想：到底是我太敏感了还是这个世界真的太糟糕了。可能两者都有吧[思考]",is_original:true,is_long_text:0,source:"网页",reposts:3,comments:7,likes:30,repost_json:null,comments_data:[]},
+  {uid:"1000000004",date:"2023-09-10",time:"10:30",content:"教师节。想起大学那个说我「不适合学这个」的教授。谢谢你的否定，让我多坚持了五年[可爱]",is_original:true,is_long_text:0,source:"网页",reposts:2,comments:5,likes:28,repost_json:null,comments_data:[]},
+  {uid:"1000000001",date:"2023-08-15",time:"16:45",content:"好久没写长微博了。但也没啥好写的。生活就是上班吃饭睡觉刷手机。偶尔出去吃顿好的发个朋友圈。这就是成年人的日常吧",is_original:true,is_long_text:1,source:"网页",reposts:0,comments:3,likes:13,repost_json:null,comments_data:[]},
+  {uid:"1000000005",date:"2023-07-07",time:"22:22",content:"今天和导师meeting，他说我progress不错。走出办公室差点哭了。被肯定的感觉真的太陌生了[泪]",is_original:true,is_long_text:0,source:"网页",reposts:3,comments:6,likes:37,repost_json:null,comments_data:[{author:"云雀叫了一整天",text:"你值得的！！",time:"22:28"}]},
+  {uid:"1000000002",date:"2023-06-16",time:"19:00",content:"cause I'm so afraid of a brand new year and I have no courage to say 'happiness'[月亮]",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:2,likes:9,repost_json:null,comments_data:[]},
+  {uid:"1000000003",date:"2023-05-20",time:"21:30",content:"520。朋友圈全是秀恩爱的。我选择关掉手机看Netflix。一个人也要好好过[微风]",is_original:true,is_long_text:0,source:"网页",reposts:1,comments:3,likes:15,repost_json:null,comments_data:[]},
+  {uid:"1000000001",date:"2023-04-04",time:"18:10",content:"清明。去看了奶奶。站在墓碑前想说很多话，但最后只说了「我挺好的，你放心」",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:2,comments:5,likes:32,repost_json:null,comments_data:[]},
+  // 2022
+  {uid:"1000000004",date:"2022-12-31",time:"23:58",content:"2022的最后一天。这一年太难了。但还是想谢谢自己坚持到了这里[给你小心心]",is_original:true,is_long_text:0,source:"网页",reposts:4,comments:8,likes:43,repost_json:null,comments_data:[]},
+  {uid:"1000000002",date:"2022-12-14",time:"21:16",content:"好崩溃[泪] ​​​",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:2,likes:7,repost_json:null,comments_data:[]},
+  {uid:"1000000003",date:"2022-11-08",time:"20:20",content:"谁来告诉我怎么才能不overthink。。。大脑一直在转停不下来 睡觉也要想很多[费解]",is_original:true,is_long_text:0,source:"网页",reposts:2,comments:6,likes:24,repost_json:null,comments_data:[{author:"豆乳盒子",text:"meditation试试？",time:"20:28"}]},
+  {uid:"1000000001",date:"2022-10-01",time:"12:00",content:"十一快乐。在家躺了三天了。不想出门不想见人不想说话。就想一个人安安静静地待着[月亮]",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:3,likes:11,repost_json:null,comments_data:[]},
+  {uid:"1000000005",date:"2022-09-15",time:"14:30",content:"开学了。新学校新环境新面孔。社交焦虑拉满但还是硬着头皮去orientation了。给自己鼓个掌吧[淡淡的]",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:1,comments:4,likes:19,repost_json:null,comments_data:[]},
+  {uid:"1000000002",date:"2022-08-22",time:"17:55",content:"here～ ​​​",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:0,comments:3,likes:13,repost_json:null,comments_data:[]},
+  {uid:"1000000003",date:"2022-07-14",time:"02:55",content:"睡不着。脑子里在循环一首歌。可能是太闲了也可能是太焦虑了 分不清楚[哈欠]",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:1,likes:8,repost_json:null,comments_data:[]},
+  {uid:"1000000001",date:"2022-06-06",time:"13:15",content:"今天中午吃了麻辣烫，加了超多辣椒。吃完心情好多了。辣是一种痛觉但不是坏事[馋嘴]",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:0,comments:2,likes:12,repost_json:null,comments_data:[]},
+  {uid:"1000000004",date:"2022-05-01",time:"11:11",content:"五月的第一天，在家大扫除。把不穿的旧衣服都捐了。清理空间也是在清理心情[微风]",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:1,likes:9,repost_json:null,comments_data:[]},
+  // 2021
+  {uid:"1000000003",date:"2021-11-20",time:"22:00",content:"好像渐渐开始接受自己了。虽然过程很慢，虽然有时候还是会怀疑。但至少比三年前强多了[兔子]",is_original:true,is_long_text:0,source:"网页",reposts:3,comments:7,likes:35,repost_json:null,comments_data:[]},
+  {uid:"1000000005",date:"2021-10-09",time:"19:40",content:"秋天是北京最好的季节。银杏黄了，空气里有糖炒栗子的味道。这是来北京之后最喜欢的一个季节",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:1,comments:3,likes:21,repost_json:null,comments_data:[]},
+  {uid:"1000000001",date:"2021-09-01",time:"15:55",content:"九月了。又到了开学季。虽然已经毕业好几年了但每到这个时候还是会有一种「该收拾收拾了」的感觉",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:2,likes:10,repost_json:null,comments_data:[]},
+  {uid:"1000000002",date:"2021-08-08",time:"18:30",content:"今天去逛了胡同。发现了一家藏在巷子深处的咖啡馆，老板养了三只猫。这是今天最幸福的事[兔子]",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:0,comments:2,likes:16,repost_json:null,comments_data:[]},
+  {uid:"1000000004",date:"2021-07-05",time:"12:35",content:"入职第一天。紧张又兴奋。不知道这份工作能做多久但先做着吧[微风]",is_original:true,is_long_text:0,source:"网页",reposts:2,comments:5,likes:22,repost_json:null,comments_data:[{author:"峡谷打工仔",text:"加油！",time:"12:42"}]},
+  {uid:"1000000003",date:"2021-06-14",time:"01:30",content:"半夜想明白了：我不是不需要亲密关系，我是怕被看穿了然后被抛弃。所以干脆不给别人看穿的机会",is_original:true,is_long_text:1,source:"网页",reposts:4,comments:9,likes:40,repost_json:null,comments_data:[{author:"山谷回音",text:"[淡淡的]太准了",time:"01:38"}]},
+  {uid:"1000000001",date:"2021-05-05",time:"21:10",content:"立夏了。今年夏天要开始锻炼！——flag先立着 Hhh",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:2,likes:9,repost_json:null,comments_data:[]},
+  {uid:"1000000005",date:"2021-04-02",time:"17:25",content:"毕业论文提交了。几年的东西压缩成三万字。交上去那一刻手都在抖。接下来等命运的安排吧[思考]",is_original:true,is_long_text:0,source:"网页",reposts:2,comments:6,likes:31,repost_json:null,comments_data:[]},
+  {uid:"1000000002",date:"2021-03-22",time:"14:10",content:"春天的风好大。走在路上感觉要被吹飞了。但柳絮还没开始飘，这是个好消息",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:0,comments:1,likes:7,repost_json:null,comments_data:[]},
+  {uid:"1000000004",date:"2021-02-12",time:"00:00",content:"春节快乐！虽然因为疫情没能回家，但打了视频电话。妈妈在屏幕那头哭了，我也哭了[泪]",is_original:true,is_long_text:0,source:"网页",reposts:5,comments:10,likes:49,repost_json:null,comments_data:[]},
+  {uid:"1000000003",date:"2021-01-18",time:"20:45",content:"今年的resolution：对自己好一点。具体来说就是少熬夜、多喝水、别老骂自己。先从第一条开始[哈欠]",is_original:true,is_long_text:0,source:"网页",reposts:1,comments:4,likes:18,repost_json:null,comments_data:[]},
+  // 2020
+  {uid:"1000000001",date:"2020-12-24",time:"22:30",content:"平安夜。疫情让一切都变了。但还是要吃苹果。妈妈说吃了苹果平平安安，今年特别需要[微风]",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:1,comments:3,likes:15,repost_json:null,comments_data:[]},
+  {uid:"1000000005",date:"2020-11-15",time:"16:00",content:"封城第不知道多少天。在阳台晒太阳，看楼下的野猫打架。这是今天唯一的娱乐活动",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:2,likes:10,repost_json:null,comments_data:[]},
+  {uid:"1000000002",date:"2020-10-01",time:"10:01",content:"中秋遇上国庆。双节快乐！在家自己做月饼失败了，成品长得像烧饼 Hhh",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:2,comments:5,likes:22,repost_json:null,comments_data:[{author:"豆乳盒子",text:"Hhhhh有创意",time:"10:08"}]},
+  {uid:"1000000003",date:"2020-08-20",time:"23:15",content:"每天都在和自己较劲。不知道在较什么劲。可能就是不想让自己太舒服吧[淡淡的]",is_original:true,is_long_text:0,source:"网页",reposts:1,comments:3,likes:14,repost_json:null,comments_data:[]},
+  {uid:"1000000004",date:"2020-07-10",time:"17:55",content:"毕业了。四年结束了。站在校门口拍了一张照，笑不出来。不是不开心，是真的太累了",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:3,comments:8,likes:38,repost_json:null,comments_data:[{author:"峡谷打工仔",text:"恭喜毕业！！",time:"18:02"}]},
+  {uid:"1000000001",date:"2020-06-06",time:"20:20",content:"线上答辩结束了。穿着睡衣答辩的体验真的绝无仅有。老师说我做的不错，但我自己知道其实还可以更好",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:2,likes:13,repost_json:null,comments_data:[]},
+  {uid:"1000000005",date:"2020-05-20",time:"13:14",content:"520。疫情期间的恋爱就是天天视频。但这样也挺好的，反而说了以前面对面说不出口的话",is_original:true,is_long_text:0,source:"网页",reposts:2,comments:4,likes:17,repost_json:null,comments_data:[]},
+  {uid:"1000000003",date:"2020-04-04",time:"10:00",content:"默哀三分钟。窗外的警报声让人想哭。2020真的太难了[泪]",is_original:true,is_long_text:0,source:"网页",reposts:1,comments:2,likes:19,repost_json:null,comments_data:[]},
+  {uid:"1000000002",date:"2020-03-15",time:"16:30",content:"在家隔离的第不知道多少天。已经学会了做蛋糕、烤饼干、织围巾。再关下去可能要开始种菜了 Hhh",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:2,comments:6,likes:28,repost_json:null,comments_data:[]},
+  // 2019
+  {uid:"1000000001",date:"2019-12-31",time:"23:59",content:"2019最后一条微博。这一年过得很快。2020会更好吗？不知道。但还是要往前走[月亮]",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:2,likes:11,repost_json:null,comments_data:[]},
+  {uid:"1000000004",date:"2019-10-25",time:"15:40",content:"大三了，突然意识到自己学的专业可能不是自己喜欢的。但这个发现来得有点晚。换不换？不敢[思考]",is_original:true,is_long_text:0,source:"网页",reposts:1,comments:5,likes:20,repost_json:null,comments_data:[]},
+  {uid:"1000000003",date:"2019-08-14",time:"01:22",content:"暑假一个人留在学校。宿舍只有我一个人。安静得可怕但也有一种奇怪的自由感",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:2,likes:8,repost_json:null,comments_data:[]},
+  {uid:"1000000005",date:"2019-06-28",time:"19:05",content:"考完最后一门。感觉身体被掏空。但考完就是爽的[兔子]",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:1,likes:9,repost_json:null,comments_data:[]},
+  {uid:"1000000002",date:"2019-04-19",time:"21:00",content:"今天去看了复联4首映。哭成狗。十年的青春结束了[泪] 爷青结",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:1,comments:3,likes:15,repost_json:null,comments_data:[]},
+  {uid:"1000000001",date:"2019-02-14",time:"18:30",content:"又是一个人过情人节。哦不，是和我的手机一起过[可爱]",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:2,likes:8,repost_json:null,comments_data:[]},
+  // 2018
+  {uid:"1000000003",date:"2018-12-01",time:"22:10",content:"十二月了。这一年最大的变化是开始接受自己的不完美。路还很长但已经在走了[微风]",is_original:true,is_long_text:0,source:"网页",reposts:1,comments:3,likes:14,repost_json:null,comments_data:[]},
+  {uid:"1000000004",date:"2018-10-08",time:"11:55",content:"十一假期结束。回学校的火车上。每次离家都会哭但这次忍住了。可能长大了吧",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:0,comments:2,likes:11,repost_json:null,comments_data:[]},
+  {uid:"1000000001",date:"2018-08-15",time:"17:40",content:"暑假打工赚了第一笔钱。虽然不多但自己挣的感觉真好。请室友吃了一顿火锅[馋嘴]",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:1,comments:4,likes:23,repost_json:null,comments_data:[{author:"豆乳盒子",text:"太棒了！",time:"17:48"}]},
+  {uid:"1000000005",date:"2018-05-30",time:"20:15",content:"大一快结束了。认识了一群很好的人。虽然有时候还是会觉得孤单但比高中的感觉好多了[兔子]",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:2,likes:12,repost_json:null,comments_data:[]},
+  {uid:"1000000002",date:"2018-03-11",time:"14:00",content:"春天来了。校园里的樱花开了。在这个学校里走走看看觉得生活还是美好的[微风]",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:0,comments:2,likes:15,repost_json:null,comments_data:[]},
+  // 2017
+  {uid:"1000000001",date:"2017-12-25",time:"19:30",content:"圣诞快乐！和同学去吃了顿好的。虽然考试周快到了但还是先快乐一下再说 Hhh",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:0,comments:2,likes:9,repost_json:null,comments_data:[]},
+  {uid:"1000000003",date:"2017-09-01",time:"13:45",content:"大一新生报到！宿舍比想象的小但还是挺激动的。新生活！[兔子]",is_original:true,is_long_text:0,source:"iPhone客户端",reposts:1,comments:4,likes:20,repost_json:null,comments_data:[]},
+  {uid:"1000000004",date:"2017-06-08",time:"17:00",content:"高考结束。走出考场的那一刻差点跪了。不管结果如何，终于结束了[淡淡的]",is_original:true,is_long_text:0,source:"网页",reposts:2,comments:6,likes:33,repost_json:null,comments_data:[]},
+  {uid:"1000000005",date:"2017-04-15",time:"22:55",content:"还有两个月就高考了。每天刷题刷到头疼。但应该值得的吧？希望值得[思考]",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:3,likes:12,repost_json:null,comments_data:[]},
+  // 2016
+  {uid:"1000000002",date:"2016-12-31",time:"23:50",content:"2016要结束了。高二真的好累。2017会好一点吗？[思考]",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:2,likes:8,repost_json:null,comments_data:[]},
+  {uid:"1000000001",date:"2016-08-18",time:"20:00",content:"暑假快结束了作业还没写完[泪] 拖延症什么时候能改啊。。。",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:1,likes:6,repost_json:null,comments_data:[]},
+  {uid:"1000000003",date:"2016-05-05",time:"18:35",content:"学校运动会跑了个倒数第二。也不是很在意毕竟体育一直不好。但同学说重在参与[可爱]",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:2,likes:7,repost_json:null,comments_data:[]},
+  {uid:"1000000004",date:"2016-02-08",time:"00:01",content:"猴年大吉！今年一定要考进年级前五十。flag立下了[兔子]",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:3,likes:10,repost_json:null,comments_data:[]},
+  // 2015
+  {uid:"1000000005",date:"2015-12-24",time:"21:00",content:"平安夜。同学们在交换苹果。收到了三个！开心[兔子]",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:1,likes:8,repost_json:null,comments_data:[]},
+  {uid:"1000000001",date:"2015-09-01",time:"08:30",content:"高中第一天。好紧张。谁也不认识。希望同桌是个好人[微风]",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:2,likes:11,repost_json:null,comments_data:[]},
+  {uid:"1000000002",date:"2015-05-10",time:"15:20",content:"今天母亲节，帮妈妈做了顿饭。虽然只是西红柿炒鸡蛋但妈妈很开心[可爱]",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:1,likes:9,repost_json:null,comments_data:[]},
+  // 2014
+  {uid:"1000000003",date:"2014-12-31",time:"22:00",content:"2014最后一天。初三了，好好学习天天向上。虽然不知道学了有什么用但还是得学[思考]",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:1,likes:7,repost_json:null,comments_data:[]},
+  {uid:"1000000004",date:"2014-08-08",time:"12:00",content:"暑假过半。作业写了三分之一。剩下的再说吧[哈欠]",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:1,likes:5,repost_json:null,comments_data:[]},
+  {uid:"1000000001",date:"2014-01-08",time:"16:30",content:"刚注册了微博！先发一条试试。大家好[兔子]",is_original:true,is_long_text:0,source:"网页",reposts:0,comments:2,likes:6,repost_json:null,comments_data:[]},
+];
+
+// Ensure sorted newest-first
+POSTS.sort((a,b)=>b.date.localeCompare(a.date)||b.time.localeCompare(a.time));
+
+// ============================================================
+// SHARED HELPERS
+// ============================================================
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmtDate(ts){
+  try{ const d=new Date(ts); if(isNaN(d.getTime()))return ts.slice(0,10); return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
+  catch(e){return ts.slice(0,10);}
+}
+function fmtShort(ts){ try{ const d=new Date(ts); if(isNaN(d.getTime()))return ts.slice(0,10); const hh=String(d.getHours()).padStart(2,'0'); const mm=String(d.getMinutes()).padStart(2,'0'); return `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()} ${hh}:${mm}`; }catch(e){return ts.slice(0,10);} }
+function getAcct(uid){ return acctMap[uid]; }
+
+function avatarHTML(uid, size){
+  const a = getAcct(uid); if(!a) return '';
+  const px = size||30;
+  return `<span style="width:${px}px;height:${px}px;border-radius:50%;flex-shrink:0;background:${a.avatar_color};display:inline-flex"></span>`;
+}
+
+function postCardHTML(p, animate, delay){
+  const acct = getAcct(p.uid); if(!acct) return '';
+  const animStyle = animate ? `animation:fadeUp 0.4s var(--ease-out) both;animation-delay:${(delay||0)*0.04}s` : '';
+  const isRepost = !p.is_original;
+  const repostData = p.repost_json ? (typeof p.repost_json==='string' ? JSON.parse(p.repost_json) : p.repost_json) : null;
+
+  let badges = '';
+  if(p.is_original){
+    badges += `<span class="badge badge-original">${ICONS.pen}原创</span>`;
+  } else {
+    badges += `<span class="badge badge-repost">${ICONS.repost}转发</span>`;
+  }
+  if(p.is_long_text) badges += `<span class="badge badge-long">${ICONS.fileText}长文</span>`;
+
+  let repostHTML = '';
+  if(isRepost && repostData){
+    const ruser = (repostData.user&&repostData.user.screen_name) ? repostData.user.screen_name : '用户';
+    const rtext = repostData.text_raw || repostData.text || '';
+    const postKey = p.uid+'-'+p.weibo_id||'';
+    repostHTML = `
+      <div class="post-repost-embed" onclick="event.stopPropagation();toggleRepost('${esc(postKey)}')" data-postkey="${esc(postKey)}">
+        <div class="rlabel">${ICONS.repost14}转发了 <strong>@${esc(ruser)}</strong> 的微博</div>
+        <div class="rtext">${esc(rtext)}</div>
+        <div class="rtoggle"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>展开原文</div>
+      </div>`;
+  }
+
+  return `
+    <article class="post-card" style="${animStyle}" onclick="openPostDetail('${esc(p.uid)}','${esc(p.date)}','${esc(p.time)}','${esc(p.content)}',${p.is_original},${p.is_long_text},'${esc(JSON.stringify(repostData||{}))}','${esc(JSON.stringify(p.comments_data||[]))}',${p.reposts},${p.comments},${p.likes},'${esc(p.source||'')}')">
+      <div class="post-hd">
+        ${avatarHTML(p.uid,30)}
+        <div class="post-meta">
+          <div class="post-name">${acct.nickname}</div>
+          <div class="post-time">${fmtDate(p.date+'T'+p.time+':00')}</div>
+        </div>
+        <div class="post-badges">${badges}</div>
+      </div>
+      <div class="post-content">${esc(p.content)}</div>
+      ${repostHTML}
+      <div class="post-footer">
+        <span class="post-source">${ICONS.smartphone}来自 ${esc(p.source||'未知客户端')}</span>
+        <span class="post-stat">${ICONS.repost14} ${p.reposts||0}</span>
+        <span class="post-stat">${ICONS.msg14} ${p.comments||0}</span>
+        <span class="post-stat">${ICONS.heart14} ${p.likes||0}</span>
+      </div>
+    </article>`;
+}
+
+// Repost toggle
+function toggleRepost(postKey){
+  const el = document.querySelector(`[data-postkey="${postKey}"]`);
+  if(!el) return;
+  const text = el.querySelector('.rtext');
+  const toggle = el.querySelector('.rtoggle');
+  if(!text||!toggle) return;
+  if(text.classList.contains('expanded')){
+    text.classList.remove('expanded');
+    toggle.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>展开原文';
+  } else {
+    text.classList.add('expanded');
+    toggle.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>收起原文';
+  }
+}
+
+// ============================================================
+// MODAL
+// ============================================================
+function openPostDetail(uid,date,time,content,is_original,is_long_text,repostJSON,commentsJSON,reposts,comments,likes,source){
+  const acct = getAcct(uid); if(!acct) return;
+  let repostData, commentsData;
+  try{ repostData = JSON.parse(repostJSON); }catch(e){ repostData=null; }
+  try{ commentsData = JSON.parse(commentsJSON); }catch(e){ commentsData=[]; }
+
+  let repostHTML = '';
+  if(!is_original && repostData){
+    const ruser = (repostData.user&&repostData.user.screen_name) ? repostData.user.screen_name : '用户';
+    const rtext = repostData.text_raw || repostData.text || '';
+    repostHTML = `<div style="background:var(--hairl);border-radius:var(--r-sm);padding:14px 18px;margin-bottom:12px;border-left:3px solid var(--border)"><div style="font-size:0.84rem;color:var(--muted);margin-bottom:6px">转发了 <strong style="color:var(--ink-soft);font-weight:600">@${esc(ruser)}</strong></div><div style="font-size:0.88rem;color:var(--ink-soft);line-height:1.65">${esc(rtext)}</div></div>`;
+  }
+
+  let commentsHTML = '';
+  if(commentsData && commentsData.length){
+    commentsHTML = `<div class="modal-comments"><h4>评论 (${commentsData.length})</h4>`;
+    commentsData.forEach(c=>{
+      commentsHTML += `<div class="comment-item"><div class="comment-hd"><span class="comment-name">${esc(c.author)}</span><span class="comment-time">${esc(c.time)}</span></div><div class="comment-text">${esc(c.text)}</div></div>`;
+    });
+    commentsHTML += '</div>';
+  }
+
+  document.getElementById('modal-card').innerHTML = `
+    <div class="modal-top"><span>${fmtDate(date+'T'+time+':00')}</span><button class="modal-close" onclick="closeModal()">&times;</button></div>
+    <div class="modal-content-text">${esc(content)}</div>
+    ${repostHTML}
+    <div class="post-footer" style="margin-top:14px">
+      <span class="post-source" style="margin-right:auto">${ICONS.smartphone}来自 ${esc(source||'未知客户端')}</span>
+      <span class="post-stat">${ICONS.repost14} ${reposts}</span>
+      <span class="post-stat">${ICONS.msg14} ${comments}</span>
+      <span class="post-stat">${ICONS.heart14} ${likes}</span>
+    </div>
+    ${commentsHTML}
+  `;
+  document.getElementById('post-modal').style.display = 'flex';
+}
+function closeModal(){ document.getElementById('post-modal').style.display = 'none'; }
+document.getElementById('post-modal').addEventListener('click', function(e){ if(e.target===this) closeModal(); });
+
+// ============================================================
+// CUSTOM SELECT COMPONENT
+// ============================================================
+function createCustomSelect(containerId, options, defaultVal, onChange){
+  const container = document.getElementById(containerId);
+  if(!container) return;
+  let open = false, value = defaultVal||'';
+
+  function render(){
+    const sel = options.find(o=>o.value===value);
+    container.innerHTML = `
+      <button class="cusel-btn"><span>${sel?sel.label:(value||'全部账号')}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--muted);transition:transform 200ms;${open?'transform:rotate(180deg)':''}"><path d="m6 9 6 6 6-6"/></svg></button>
+      ${open ? `<div class="cusel-dropdown">${options.map(o=>`<button class="cusel-opt${o.value===value?' sel':''}">${o.label}</button>`).join('')}</div>` : ''}
+    `;
+    container.querySelector('.cusel-btn').onclick = ()=>{ open=!open; render(); };
+    container.querySelectorAll('.cusel-opt').forEach((btn,i)=>{
+      btn.onclick = ()=>{ value=options[i].value; open=false; render(); if(onChange) onChange(value); };
+    });
+  }
+
+  document.addEventListener('mousedown', function handler(e){
+    if(!container.contains(e.target) && open){ open=false; render(); }
+  });
+
+  render();
+  return { getValue: ()=>value, setValue: (v)=>{ value=v; render(); } };
+}
+
+// ============================================================
+// DATEPICKER COMPONENT
+// ============================================================
+function createDatePicker(containerId, placeholder, onChange){
+  const container = document.getElementById(containerId);
+  if(!container) return;
+  let open = false, value = '';
+  const today = new Date();
+  let viewYear = today.getFullYear(), viewMonth = today.getMonth();
+  const MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const WDAYS = ['一','二','三','四','五','六','日'];
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+
+  function daysInMonth(y,m){ return new Date(y,m+1,0).getDate(); }
+  function firstDow(y,m){ const d=new Date(y,m,1).getDay(); return d===0?6:d-1; }
+  function fmt(y,m,d){ return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+
+  function render(){
+    const total = daysInMonth(viewYear, viewMonth);
+    const start = firstDow(viewYear, viewMonth);
+    let days = [];
+    for(let i=0;i<start;i++) days.push(null);
+    for(let d=1;d<=total;d++) days.push(d);
+    while(days.length%7!==0) days.push(null);
+
+    container.innerHTML = `
+      <button class="dp-trigger" id="${containerId}-trig"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--muted)"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>${value||placeholder||'选择日期'}</span>${value?`<span style="margin-left:auto;color:var(--muted);cursor:pointer;font-size:1rem" id="${containerId}-clear">&times;</span>`:''}</button>
+      ${open ? `
+      <div class="dp-drop">
+        <div class="dp-nav">
+          <button id="${containerId}-prev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></button>
+          <div style="display:flex;align-items:center;gap:6px">
+            <select id="${containerId}-year">${Array.from({length:20},(_,i)=>today.getFullYear()-15+i).map(y=>`<option value="${y}"${y===viewYear?' selected':''}>${y}</option>`).join('')}</select>
+            <select id="${containerId}-month">${MONTHS.map((l,i)=>`<option value="${i}"${i===viewMonth?' selected':''}>${l}</option>`).join('')}</select>
+          </div>
+          <button id="${containerId}-next"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button>
+        </div>
+        <div class="dp-grid">${WDAYS.map(w=>`<div class="dp-day-hd">${w}</div>`).join('')}${days.map((d,i)=>{if(d===null)return'<div class="dp-day empty"></div>';const ds=fmt(viewYear,viewMonth,d);const isToday=ds===todayStr,isSel=ds===value;return`<button class="dp-day${isToday?' today':''}${isSel?' sel':''}" data-date="${ds}">${d}</button>`;}).join('')}</div>
+        <div class="dp-actions"><button class="dp-btn-clear" id="${containerId}-dpclr">清除</button><button class="dp-btn-today" id="${containerId}-dptdy">今天</button></div>
+      </div>`:''}
+    `;
+
+    // Bind events
+    const trig = document.getElementById(containerId+'-trig');
+    if(trig) trig.onclick = ()=>{ open=!open; render(); };
+
+    const clr = document.getElementById(containerId+'-clear');
+    if(clr) clr.onclick = (e)=>{ e.stopPropagation(); value=''; open=false; render(); if(onChange) onChange(''); };
+
+    if(open){
+      document.getElementById(containerId+'-prev').onclick = ()=>{ if(viewMonth===0){viewYear--;viewMonth=11}else viewMonth--; render(); };
+      document.getElementById(containerId+'-next').onclick = ()=>{ if(viewMonth===11){viewYear++;viewMonth=0}else viewMonth++; render(); };
+      document.getElementById(containerId+'-year').onchange = function(){ viewYear=parseInt(this.value); render(); };
+      document.getElementById(containerId+'-month').onchange = function(){ viewMonth=parseInt(this.value); render(); };
+      document.getElementById(containerId+'-dpclr').onclick = ()=>{ value=''; open=false; render(); if(onChange) onChange(''); };
+      document.getElementById(containerId+'-dptdy').onclick = ()=>{ value=todayStr; open=false; render(); if(onChange) onChange(value); };
+      container.querySelectorAll('.dp-day:not(.empty)').forEach(btn=>{
+        btn.onclick = ()=>{ value=btn.dataset.date; open=false; render(); if(onChange) onChange(value); };
+      });
+    }
+
+    document.addEventListener('mousedown', function handler(e){
+      if(!container.contains(e.target) && open){ open=false; render(); }
+    });
+  }
+
+  render();
+  return { getValue: ()=>value, setValue: (v)=>{ value=v; render(); } };
+}
+
+// ============================================================
+// PAGE 1: BROWSE
+// ============================================================
+let browsePage = 1, browsePerPage = 15;
+let browseFilter = { acct:'', type:'all', dateFrom:'', dateTo:'', keyword:'' };
+let browseSel;
+
+function initBrowse(){
+  const acctOpts = [{value:'',label:'全部账号'},...ACCOUNTS.map(a=>({value:a.uid,label:a.nickname}))];
+  browseSel = createCustomSelect('browse-acct-wrap', acctOpts, '', (v)=>{ browseFilter.acct=v; browsePage=1; renderBrowse(); });
+
+  // Segmented control
+  const seg = document.getElementById('browse-type-ctrl');
+  seg.innerHTML = `
+    <button class="seg-btn active" data-v="all"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>全部</button>
+    <button class="seg-btn" data-v="original"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>原创</button>
+    <button class="seg-btn" data-v="repost"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>转发</button>`;
+  seg.querySelectorAll('.seg-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      seg.querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      browseFilter.type = btn.dataset.v;
+      browsePage = 1;
+      renderBrowse();
+    });
+  });
+
+  // DatePickers
+  createDatePicker('browse-dp-from', '开始日期', (v)=>{ browseFilter.dateFrom=v; browsePage=1; renderBrowse(); });
+  createDatePicker('browse-dp-to', '结束日期', (v)=>{ browseFilter.dateTo=v; browsePage=1; renderBrowse(); });
+
+  // Search
+  const searchEl = document.getElementById('browse-search');
+  let searchTimer;
+  searchEl.addEventListener('input',()=>{
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(()=>{ browseFilter.keyword=searchEl.value; browsePage=1; renderBrowse(); },300);
+  });
+
+  renderBrowse();
+}
+
+function getFilteredPosts(){
+  let arr = POSTS;
+  if(browseFilter.acct) arr = arr.filter(p=>p.uid===browseFilter.acct);
+  if(browseFilter.dateFrom) arr = arr.filter(p=>p.date>=browseFilter.dateFrom);
+  if(browseFilter.dateTo) arr = arr.filter(p=>p.date<=browseFilter.dateTo);
+  if(browseFilter.keyword) arr = arr.filter(p=>p.content.toLowerCase().includes(browseFilter.keyword.toLowerCase()));
+  if(browseFilter.type==='original') arr = arr.filter(p=>p.is_original);
+  if(browseFilter.type==='repost') arr = arr.filter(p=>!p.is_original);
+  return arr;
+}
+
+function renderBrowse(){
+  const filtered = getFilteredPosts();
+  const totalPages = Math.ceil(filtered.length / browsePerPage);
+  if(browsePage > totalPages) browsePage = Math.max(1, totalPages);
+  const start = (browsePage-1)*browsePerPage;
+  const pagePosts = filtered.slice(start, start+browsePerPage);
+
+  // Stats
+  const uids = new Set(filtered.map(p=>p.uid));
+  let earliest = '', latest = '';
+  if(filtered.length){ earliest = filtered[filtered.length-1].date; latest = filtered[0].date; }
+  document.getElementById('browse-stats').innerHTML = `
+    <div style="display:flex;gap:16px;flex-wrap:wrap">
+      <span>共 <strong>${filtered.length}</strong> 条微博</span>
+      <span>来自 <strong>${uids.size}</strong> 个账号</span>
+      ${filtered.length?`<span><strong>${earliest.slice(0,7)}</strong> — <strong>${latest.slice(0,7)}</strong></span>`:''}
+    </div>
+    <div class="export-wrap" id="browse-export-wrap"></div>`;
+
+  // Export
+  initExportBtn('browse-export-wrap');
+
+  // Posts
+  const list = document.getElementById('browse-list');
+  const empty = document.getElementById('browse-empty');
+  if(filtered.length===0){
+    list.innerHTML = '';
+    empty.style.display = 'block';
+    document.getElementById('browse-pager-top').style.display = 'none';
+    document.getElementById('browse-pager-bottom').style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+
+  // Group by year
+  let lastYear = '', html = '';
+  pagePosts.forEach((p,i)=>{
+    const y = p.date.slice(0,4);
+    if(y !== lastYear){
+      html += `<div class="year-div"><span>${y}</span></div>`;
+      lastYear = y;
+    }
+    html += postCardHTML(p, true, i);
+  });
+  list.innerHTML = html;
+
+  // Pagination
+  renderPagination('browse-pager-top', browsePage, totalPages);
+  renderPagination('browse-pager-bottom', browsePage, totalPages);
+  if(totalPages > 1){
+    document.getElementById('browse-pager-top').style.display = 'flex';
+    document.getElementById('browse-pager-bottom').style.display = 'flex';
+  } else {
+    document.getElementById('browse-pager-top').style.display = 'none';
+    document.getElementById('browse-pager-bottom').style.display = 'none';
+  }
+}
+
+function renderPagination(containerId, page, totalPages){
+  const container = document.getElementById(containerId);
+  if(!container) return;
+  let html = '';
+  html += `<button class="pager-btn" ${page<=1?'disabled':''} onclick="browsePage=${page-1};renderBrowse()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></button>`;
+
+  const pages = [];
+  if(totalPages<=7){
+    for(let i=1;i<=totalPages;i++) pages.push(i);
+  } else {
+    pages.push(1);
+    if(page>3) pages.push('...');
+    for(let i=Math.max(2,page-1);i<=Math.min(totalPages-1,page+1);i++) pages.push(i);
+    if(page<totalPages-2) pages.push('...');
+    pages.push(totalPages);
+  }
+  pages.forEach(p=>{
+    if(p==='...') html += '<span class="pager-dots">...</span>';
+    else if(p===page) html += `<button class="pager-btn active">${p}</button>`;
+    else html += `<button class="pager-btn" onclick="browsePage=${p};renderBrowse()">${p}</button>`;
+  });
+
+  html += `<button class="pager-btn" ${page>=totalPages?'disabled':''} onclick="browsePage=${page+1};renderBrowse()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button>`;
+
+  if(totalPages>5){
+    html += `<span class="pager-jump"><input type="number" min="1" max="${totalPages}" value="${page}" id="${containerId}-jump" onkeydown="if(event.key==='Enter'){const v=parseInt(this.value);if(v>=1&&v<=${totalPages}){browsePage=v;renderBrowse();}}"><button class="pager-btn" onclick="const v=parseInt(document.getElementById('${containerId}-jump').value);if(v>=1&&v<=${totalPages}){browsePage=v;renderBrowse();}">跳转</button></span>`;
+  }
+  container.innerHTML = html;
+}
+
+function initExportBtn(wrapId){
+  const wrap = document.getElementById(wrapId);
+  if(!wrap) return;
+  let open = false;
+  function render(){
+    wrap.innerHTML = `
+      <button class="export-btn" id="${wrapId}-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>导出</button>
+      ${open?`<div class="export-menu">
+        <button class="export-item">JSON</button>
+        <button class="export-item">HTML</button>
+        <button class="export-item">Markdown ZIP</button>
+        <button class="export-item">PDF / 打印</button>
+      </div>`:''}`;
+    document.getElementById(wrapId+'-btn').onclick = ()=>{ open=!open; render(); };
+    wrap.querySelectorAll('.export-item').forEach(btn=>{
+      btn.onclick = ()=>{ open=false; alert('导出 Demo —— 实际将下载文件'); render(); };
+    });
+  }
+  document.addEventListener('mousedown', function h(e){ if(!wrap.contains(e.target)&&open){ open=false; render(); } });
+  render();
+}
+
+// ============================================================
+// PAGE 2: SHUFFLE
+// ============================================================
+let shuffleFilter = { acct:'', type:'all', dateFrom:'', dateTo:'' };
+let shuffleSeenTotal = 0, shufflePosts = [];
+
+function initShuffle(){
+  const acctOpts = [{value:'',label:'全部账号'},...ACCOUNTS.map(a=>({value:a.uid,label:a.nickname}))];
+  createCustomSelect('shuffle-acct-wrap', acctOpts, '', (v)=>{ shuffleFilter.acct=v; doShuffle(); });
+
+  const seg = document.getElementById('shuffle-type-ctrl');
+  seg.innerHTML = `
+    <button class="seg-btn active" data-v="all"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>全部</button>
+    <button class="seg-btn" data-v="original"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>原创</button>
+    <button class="seg-btn" data-v="repost"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>转发</button>`;
+  seg.querySelectorAll('.seg-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      seg.querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      shuffleFilter.type = btn.dataset.v;
+      doShuffle();
+    });
+  });
+
+  createDatePicker('shuffle-dp-from', '开始日期', (v)=>{ shuffleFilter.dateFrom=v; doShuffle(); });
+  createDatePicker('shuffle-dp-to', '结束日期', (v)=>{ shuffleFilter.dateTo=v; doShuffle(); });
+
+  document.getElementById('shuffle-reroll').addEventListener('click', doShuffle);
+  document.getElementById('shuffle-loadmore').addEventListener('click', loadMoreShuffle);
+
+  doShuffle();
+}
+
+function getShufflePool(){
+  let arr = POSTS;
+  if(shuffleFilter.acct) arr = arr.filter(p=>p.uid===shuffleFilter.acct);
+  if(shuffleFilter.dateFrom) arr = arr.filter(p=>p.date>=shuffleFilter.dateFrom);
+  if(shuffleFilter.dateTo) arr = arr.filter(p=>p.date<=shuffleFilter.dateTo);
+  if(shuffleFilter.type==='original') arr = arr.filter(p=>p.is_original);
+  if(shuffleFilter.type==='repost') arr = arr.filter(p=>!p.is_original);
+  return arr;
+}
+
+function doShuffle(){
+  const pool = getShufflePool();
+  const shuffled = [...pool].sort(()=>Math.random()-0.5).slice(0,20);
+  shufflePosts = shuffled;
+  shuffleSeenTotal = shuffled.length;
+  renderShuffleGrid();
+}
+
+function loadMoreShuffle(){
+  const pool = getShufflePool();
+  const more = [...pool].sort(()=>Math.random()-0.5).slice(0,10);
+  shufflePosts = [...shufflePosts, ...more];
+  shuffleSeenTotal += more.length;
+  renderShuffleGrid();
+}
+
+function renderShuffleGrid(){
+  document.getElementById('shuffle-status-text').textContent = `随机浏览中 · 已看 ${shuffleSeenTotal + shufflePosts.length} 条`;
+
+  const left = shufflePosts.filter((_,i)=>i%2===0);
+  const right = shufflePosts.filter((_,i)=>i%2===1);
+
+  const cardColors = ['#fdf8f2','#f5f6f8','#f8f5f0','#f6f7f5'];
+  function cardHTML(p,i,col){
+    const acct = getAcct(p.uid); if(!acct) return '';
+    const bg = cardColors[Math.floor(Math.random()*4)];
+    return `
+      <article class="shuffle-card" style="background:${bg};animation:fadeUp 0.4s var(--ease-out) both;animation-delay:${i*0.05}s" onclick="openPostDetail('${esc(p.uid)}','${esc(p.date)}','${esc(p.time)}','${esc(p.content)}',${p.is_original},${p.is_long_text},'{}','${esc(JSON.stringify(p.comments_data||[]))}',${p.reposts},${p.comments},${p.likes},'${esc(p.source||'')}')">
+        <div class="sc-body">
+          <div class="sc-name">
+            <span class="sc-avatar" style="background:${acct.avatar_color}"></span>${acct.nickname}
+          </div>
+          <p class="sc-content">${esc(p.content)}</p>
+          <div class="sc-foot">
+            <span>${fmtShort(p.date+'T'+p.time+':00')}</span>
+            <span style="display:flex;align-items:center;gap:2px;margin-left:auto">${ICONS.heart11}${p.likes||0}</span>
+          </div>
+        </div>
+      </article>`;
+  }
+  document.getElementById('shuffle-col-l').innerHTML = left.map((p,i)=>cardHTML(p,i,'l')).join('');
+  document.getElementById('shuffle-col-r').innerHTML = right.map((p,i)=>cardHTML(p,i,'r')).join('');
+}
+
+// ============================================================
+// PAGE 3: ON THIS DAY
+// ============================================================
+let todayMonth, todayDay;
+
+function initToday(){
+  const monSel = document.getElementById('today-month');
+  for(let i=1;i<=12;i++){ const o=document.createElement('option'); o.value=i; o.textContent=i+'月'; monSel.appendChild(o); }
+  const daySel = document.getElementById('today-day');
+  for(let i=1;i<=31;i++){ const o=document.createElement('option'); o.value=i; o.textContent=i+'日'; daySel.appendChild(o); }
+
+  const now = new Date();
+  monSel.value = now.getMonth()+1;
+  daySel.value = now.getDate();
+  todayMonth = now.getMonth()+1;
+  todayDay = now.getDate();
+
+  monSel.addEventListener('change',()=>{ todayMonth=parseInt(monSel.value); fetchToday(); });
+  daySel.addEventListener('change',()=>{ todayDay=parseInt(daySel.value); fetchToday(); });
+
+  fetchToday();
+}
+
+function fetchToday(){
+  const mm = String(todayMonth).padStart(2,'0'), dd = String(todayDay).padStart(2,'0');
+  const target = mm+'-'+dd;
+  const posts = POSTS.filter(p=>p.date.slice(5,10)===target);
+
+  document.getElementById('today-stats').style.display = posts.length?'flex':'none';
+  document.getElementById('today-list').innerHTML = '';
+  document.getElementById('today-empty').style.display = posts.length?'none':'block';
+  document.getElementById('today-empty-msg').textContent = `${todayMonth}月${todayDay}日还没有微博记录`;
+
+  if(posts.length){
+    const uids = new Set(posts.map(p=>p.uid));
+    const years = [...new Set(posts.map(p=>p.date.slice(0,4)))];
+    document.getElementById('today-stats').innerHTML = `
+      <div style="display:flex;gap:16px;flex-wrap:wrap">
+        <span>共 <strong>${posts.length}</strong> 条微博</span>
+        <span>来自 <strong>${uids.size}</strong> 个账号</span>
+        <span><strong>${years.length}</strong> 个年份</span>
+      </div>`;
+
+    // Group by year
+    let lastYear = '', html = '';
+    posts.forEach((p,i)=>{
+      const y = p.date.slice(0,4);
+      if(y !== lastYear){
+        html += `<div class="year-div"><span>${y}</span></div>`;
+        lastYear = y;
+      }
+      html += postCardHTML(p, true, i);
+    });
+    document.getElementById('today-list').innerHTML = html;
+  }
+}
+
+// ============================================================
+// PAGE 4: SYNC
+// ============================================================
+let syncAcctUid = ACCOUNTS[0].uid;
+let syncing = false, syncTimer = null;
+
+function initSync(){
+  const acctOpts = ACCOUNTS.map(a=>({value:a.uid,label:a.nickname}));
+  const sel = createCustomSelect('sync-acct-wrap', acctOpts, ACCOUNTS[0].uid, (v)=>{ syncAcctUid=v; updateSyncDisplay(); });
+
+  document.getElementById('sync-start-btn').addEventListener('click', startSync);
+  document.getElementById('sync-cancel-btn').addEventListener('click', cancelSync);
+  updateSyncDisplay();
+}
+
+function updateSyncDisplay(){
+  const acct = getAcct(syncAcctUid);
+  if(!acct) return;
+  document.getElementById('sync-total').textContent = acct.posts;
+  document.getElementById('sync-range').innerHTML = `2014-01 — 2026-08`;
+  document.getElementById('sync-last').innerHTML = `${ICONS.clock}上次: ${new Date(acct.last_sync).toLocaleString('zh-CN')}`;
+}
+
+function getSyncHistoryHTML(acct){
+  return `
+    <table class="sync-table">
+      <thead><tr><th>开始时间</th><th style="text-align:right">抓取数</th><th style="text-align:right">新增</th><th style="text-align:center">状态</th></tr></thead>
+      <tbody>
+        <tr><td>${new Date(acct.last_sync).toLocaleString('zh-CN')}</td><td class="num">${acct.posts}</td><td class="new">+${Math.floor(acct.posts*0.05)}</td><td class="ctr"><span class="status-badge status-ok">完成</span></td></tr>
+        <tr><td>${new Date(Date.parse(acct.last_sync)-86400000*7).toLocaleString('zh-CN')}</td><td class="num">${Math.floor(acct.posts*0.92)}</td><td class="new">+${Math.floor(acct.posts*0.08)}</td><td class="ctr"><span class="status-badge status-ok">完成</span></td></tr>
+        <tr><td>${new Date(Date.parse(acct.last_sync)-86400000*14).toLocaleString('zh-CN')}</td><td class="num">${Math.floor(acct.posts*0.8)}</td><td class="new">+${Math.floor(acct.posts*0.15)}</td><td class="ctr"><span class="status-badge status-ok">完成</span></td></tr>
+      </tbody>
+    </table>`;
+}
+
+function startSync(){
+  if(syncing) return;
+  syncing = true;
+  const acct = getAcct(syncAcctUid);
+  const startBtn = document.getElementById('sync-start-btn');
+  const cancelBtn = document.getElementById('sync-cancel-btn');
+  const errorDiv = document.getElementById('sync-error');
+
+  errorDiv.style.display = 'none';
+  cancelBtn.style.display = 'inline-flex';
+  startBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>同步中 · 帖子...`;
+  startBtn.disabled = true;
+
+  // Simulate 3-stage sync
+  syncTimer = setTimeout(()=>{ startBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>同步中 · 评论...`; }, 2000);
+  syncTimer = setTimeout(()=>{ startBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>同步中 · 图片...`; }, 3500);
+  syncTimer = setTimeout(()=>{ finishSync(); }, 5000);
+}
+
+function cancelSync(){
+  if(syncTimer) clearTimeout(syncTimer);
+  syncing = false;
+  document.getElementById('sync-start-btn').innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>一键同步`;
+  document.getElementById('sync-start-btn').disabled = false;
+  document.getElementById('sync-cancel-btn').style.display = 'none';
+}
+
+function finishSync(){
+  syncing = false;
+  document.getElementById('sync-start-btn').innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>一键同步`;
+  document.getElementById('sync-start-btn').disabled = false;
+  document.getElementById('sync-cancel-btn').style.display = 'none';
+
+  // Update history
+  const acct = getAcct(syncAcctUid);
+  document.getElementById('sync-history-content').innerHTML = getSyncHistoryHTML(acct);
+  updateSyncDisplay();
+}
+
+// ============================================================
+// PAGE 5: ACCOUNTS
+// ============================================================
+function renderAccounts(){
+  document.getElementById('acct-list').innerHTML = ACCOUNTS.map(a=>`
+    <div class="acct-card">
+      <span class="acct-avatar" style="background:${a.avatar_color}"></span>
+      <div class="acct-body">
+        <div class="acct-name">${a.nickname}</div>
+        <div class="acct-sub">UID: ${a.uid}</div>
+        <div class="acct-sub2">上次同步: ${new Date(a.last_sync).toLocaleString('zh-CN')}</div>
+      </div>
+      <div class="acct-actions">
+        <button class="btn-sm" onclick="alert('刷新功能 Demo')">刷新</button>
+        <button class="btn-sm" onclick="alert('编辑功能 Demo')">编辑</button>
+        <button class="btn-sm danger" onclick="alert('删除功能 Demo')">删除</button>
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('acct-add-btn').addEventListener('click', ()=>{ alert('添加账号 Demo —— 实际需输入 UID 和 Cookie'); });
+}
+
+// ============================================================
+// TAB SWITCHING
+// ============================================================
+document.querySelectorAll('.nav-pill').forEach(btn=>{
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('.nav-pill').forEach(b=>b.classList.remove('active'));
+    this.classList.add('active');
+    const tab = this.dataset.tab;
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById('page-'+tab).classList.add('active');
+    if(tab==='shuffle') doShuffle();
+  });
+});
+
+// ============================================================
+// INIT
+// ============================================================
+initBrowse();
+initShuffle();
+initToday();
+initSync();
+renderAccounts();
+
+// Init sync history display
+const syncHistAcct = getAcct(syncAcctUid);
+if(syncHistAcct) document.getElementById('sync-history-content').innerHTML = getSyncHistoryHTML(syncHistAcct);
+</script>
+</body>
+</html>

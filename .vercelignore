@@ -1,0 +1,15 @@
+data.db
+data.db-shm
+data.db-wal
+data.db.bak.*
+node_modules
+scripts
+backups
+logs
+public/uploads
+*.html
+!app/**/*.html
+browse-icon-preview.html
+icon-preview.html
+demo.html
+tsconfig.tsbuildinfo

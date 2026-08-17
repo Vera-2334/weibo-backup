@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weibo Backup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600&family=Noto+Sans+SC:wght@300;400;500;600&family=Noto+Serif+SC:wght@400;500;600&display=swap&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Design V2 × E-Ink Paper — 安静桌面·阅读质感
+   Warm neutral + paper texture + editorial rhythm
+   ============================================================ */
+
+:root {
+  /* Paper surface hierarchy */
+  --canvas:   #f5f3ee;
+  --card:     #fcfbf8;
+  --border:   #e6e1d8;
+  --hairl:    #f0ede6;
+  --wash:     #f8f6f2;
+
+  /* Brand gold — the warm anchor */
+  --gold:       #c2884a;
+  --gold-dk:    #9a6428;
+  --gold-lt:    #e0c898;
+  --gold-wash:  #f9f1e2;
+  --gold-glow:  rgba(194,136,74,0.12);
+
+  /* Ink palette — E-Ink inspired */
+  --ink:        #1e1810;
+  --ink-soft:   #4a4035;
+  --muted:      #7a7065;
+  --faint:      #b0a89c;
+
+  /* Natural accents */
+  --sage:       #6b8b6e;
+  --terracotta: #c0765c;
+  --slate:      #6b7f8e;
+  --blue:       #6e8aa0;
+  --amber:      #b8863e;
+
+  /* Semantic */
+  --green:      #5a8a5e;
+  --red:        #c06658;
+
+  /* Radius scale */
+  --r-xs: 6px;
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 20px;
+
+  /* Shadows — layered, tactile */
+  --sh-none:  0 0 0 transparent;
+  --sh-card:  0 1px 3px rgba(30,24,16,0.035), 0 0 0 1px rgba(30,24,16,0.02);
+  --sh-raised: 0 2px 8px rgba(30,24,16,0.05), 0 0 0 1px rgba(30,24,16,0.03);
+  --sh-over:  0 6px 20px rgba(30,24,16,0.08), 0 0 0 1px rgba(30,24,16,0.04);
+
+  /* Typography */
+  --font-sans: 'Outfit', 'Noto Sans SC', system-ui, sans-serif;
+  --font-body: 'Noto Sans SC', 'Outfit', system-ui, sans-serif;
+  --font-serif: 'Noto Serif SC', 'Georgia', serif;
+
+  /* Layout */
+  --content-max: 680px;
+  --nav-height: 56px;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in:  cubic-bezier(0.4, 0, 1, 1);
+  --dur-fast: 150ms;
+  --dur-normal: 250ms;
+  --dur-slow: 400ms;
+}
+
+/* Dark mode — warm night paper */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --canvas:   #1a1814;
+    --card:     #24211c;
+    --border:   #35312a;
+    --hairl:    #2c2924;
+    --wash:     #1f1d18;
+    --gold-wash:  #2a2418;
+    --gold-glow:  rgba(194,136,74,0.08);
+    --ink:        #e8e4db;
+    --ink-soft:   #bfb9ad;
+    --muted:      #8c8577;
+    --faint:      #5c574e;
+    --sh-card:  0 1px 3px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.03);
+    --sh-raised: 0 2px 8px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.04);
+    --sh-over:  0 6px 20px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05);
+  }
+}
+
+/* ============================================================
+   Reset & Base
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--canvas);
+  color: var(--ink);
+  line-height: 1.7;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Paper texture — noise grain overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.028;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Ambient light — warm gradients */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 70% 50% at 15% 5%,  rgba(107,127,142,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 85% 90%, rgba(194,136,74,0.055) 0%, transparent 60%);
+}
+
+/* Focus ring — visible, accessible */
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: var(--r-xs);
+}
+
+/* Selection */
+::selection {
+  background: var(--gold-wash);
+  color: var(--ink);
+}
+
+/* Scrollbar — subtle */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--faint); }
+
+/* ============================================================
+   App Shell
+   ============================================================ */
+
+.app-shell {
+  position: relative;
+  z-index: 1;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 0 24px 80px;
+}
+
+/* ============================================================
+   Navigation — Top Bar
+   ============================================================ */
+
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding: 14px 0;
+  background: color-mix(in srgb, var(--canvas) 92%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* Brand */
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--ink);
+  text-decoration: none;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+}
+
+.nav-brand-mark {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-sm);
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dk) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.nav-brand-mark svg { width: 18px; height: 18px; }
+
+/* Tab pills */
+.nav-tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--hairl);
+  border-radius: var(--r-sm);
+  padding: 3px;
+}
+
+.nav-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: var(--r-xs);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out),
+              background var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-fast) var(--ease-out);
+  border: none;
+  background: transparent;
+  font-family: var(--font-body);
+  white-space: nowrap;
+}
+
+.nav-tab svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+.nav-tab:hover { color: var(--ink-soft); }
+
+.nav-tab.active {
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: var(--sh-card);
+}
+
+/* ============================================================
+   Filter Bar — Card surface
+   ============================================================ */
+
+.filter-bar {
+  background: var(--card);
+  border-radius: var(--r-lg);
+  padding: 18px 22px;
+  margin-bottom: 14px;
+  box-shadow: var(--sh-card);
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.filter-row + .filter-row { margin-top: 10px; }
+
+/* Select */
+.filter-select {
+  appearance: none;
+  -webkit-appearance: none;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  padding: 8px 32px 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-xs);
+  background: var(--canvas);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237a7065' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  color: var(--ink);
+  outline: none;
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-fast) var(--ease-out);
+  min-width: 130px;
+}
+
+.filter-select:focus-visible {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-glow);
+}
+
+/* Date inputs */
+.filter-date {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-xs);
+  background: var(--canvas);
+  color: var(--ink);
+  outline: none;
+  min-width: 128px;
+  transition: border-color var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.filter-date:focus-visible {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-glow);
+}
+
+.filter-date::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.5;
+}
+
+/* Date separator */
+.filter-sep {
+  font-size: 0.85rem;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+/* Search */
+.filter-search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 160px;
+  max-width: 260px;
+  margin-left: auto;
+}
+
+.filter-search-wrap svg {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.filter-search {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  padding: 8px 12px 8px 32px;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--r-xs);
+  background: var(--canvas);
+  color: var(--ink);
+  outline: none;
+  transition: border-color var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.filter-search::placeholder { color: var(--faint); }
+
+.filter-search:focus-visible {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-glow);
+}
+
+/* Segmented control */
+.seg-control {
+  display: flex;
+  gap: 1px;
+  background: var(--hairl);
+  border-radius: var(--r-xs);
+  padding: 2px;
+}
+
+.seg-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border-radius: calc(var(--r-xs) - 1px);
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out),
+              background var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-fast) var(--ease-out);
+  white-space: nowrap;
+}
+
+.seg-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+.seg-btn:hover { color: var(--ink-soft); }
+
+.seg-btn.active {
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: var(--sh-card);
+}
+
+/* ============================================================
+   Stats Summary
+   ============================================================ */
+
+.stats-bar {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  font-size: 0.84rem;
+  color: var(--muted);
+  padding: 0 4px;
+  margin-bottom: 22px;
+}
+
+.stats-bar strong {
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+/* ============================================================
+   Timeline
+   ============================================================ */
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Year divider — editorial magazine style */
+.year-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 0 4px;
+}
+
+.year-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.year-label {
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   Post Card
+   ============================================================ */
+
+.post-card {
+  background: var(--card);
+  border-radius: var(--r-md);
+  padding: 20px 24px;
+  box-shadow: var(--sh-card);
+  transition: box-shadow var(--dur-normal) var(--ease-out);
+  cursor: default;
+}
+
+.post-card:hover { box-shadow: var(--sh-raised); }
+
+/* Card entrance — staggered fade */
+@media (prefers-reduced-motion: no-preference) {
+  .post-card {
+    animation: cardIn 0.45s var(--ease-out) both;
+  }
+  .post-card:nth-child(1) { animation-delay: 0.04s; }
+  .post-card:nth-child(2) { animation-delay: 0.08s; }
+  .post-card:nth-child(3) { animation-delay: 0.12s; }
+  .post-card:nth-child(4) { animation-delay: 0.16s; }
+  .post-card:nth-child(5) { animation-delay: 0.20s; }
+  .post-card:nth-child(6) { animation-delay: 0.24s; }
+}
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Card header */
+.post-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+/* Avatar */
+.post-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: #fff;
+  font-weight: 600;
+  font-family: var(--font-sans);
+}
+
+.av-a { background: #d4a76a; }
+.av-b { background: #7b9c8e; }
+
+.post-meta { flex: 1; min-width: 0; }
+
+.post-author {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.35;
+}
+
+.post-time {
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+/* Badges */
+.post-badges { display: flex; gap: 6px; flex-shrink: 0; }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  padding: 3px 9px;
+  border-radius: 99px;
+  font-weight: 500;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+
+.badge svg { width: 11px; height: 11px; flex-shrink: 0; }
+
+.badge-original { background: var(--gold-wash); color: var(--gold-dk); }
+.badge-repost   { background: #edf0f4; color: var(--slate); }
+.badge-long     { background: #f5f0e9; color: var(--amber); }
+
+@media (prefers-color-scheme: dark) {
+  .badge-repost { background: #252d33; }
+  .badge-long   { background: #2a2420; }
+}
+
+/* Card body */
+.post-content {
+  font-size: 0.95rem;
+  line-height: 1.78;
+  color: var(--ink-soft);
+  margin-bottom: 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.post-content a {
+  color: var(--blue);
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.post-content a:hover {
+  color: var(--gold-dk);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Image strip */
+.post-images {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  margin-bottom: 12px;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.post-images::-webkit-scrollbar { display: none; }
+
+.post-img {
+  flex-shrink: 0;
+  width: 130px;
+  height: 130px;
+  border-radius: var(--r-sm);
+  object-fit: cover;
+  background: var(--hairl);
+  cursor: pointer;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+.post-img:hover { opacity: 0.85; }
+
+/* ============================================================
+   Repost Block — collapsible
+   ============================================================ */
+
+.repost-block {
+  background: var(--hairl);
+  border-radius: var(--r-sm);
+  padding: 14px 18px;
+  margin-bottom: 12px;
+  border-left: 3px solid var(--border);
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out),
+              background var(--dur-fast) var(--ease-out);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.repost-block:hover {
+  border-color: var(--slate);
+  background: var(--wash);
+}
+
+.repost-header {
+  font-size: 0.84rem;
+  color: var(--muted);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.repost-header svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+.repost-header strong {
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+.repost-preview {
+  font-size: 0.88rem;
+  color: var(--muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.65;
+}
+
+.repost-block.expanded .repost-preview {
+  display: block;
+  -webkit-line-clamp: unset;
+  color: var(--ink-soft);
+}
+
+.repost-expand-hint {
+  font-size: 0.78rem;
+  color: var(--gold);
+  margin-top: 8px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.repost-expand-hint svg {
+  width: 12px;
+  height: 12px;
+  transition: transform var(--dur-normal) var(--ease-out);
+}
+
+.repost-block.expanded .repost-expand-hint svg {
+  transform: rotate(180deg);
+}
+
+/* ============================================================
+   Post Footer
+   ============================================================ */
+
+.post-footer {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  padding-top: 10px;
+  border-top: 1px solid var(--hairl);
+}
+
+.post-source {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: auto;
+}
+
+.post-source svg { width: 14px; height: 14px; }
+
+.post-stats {
+  display: flex;
+  gap: 14px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  cursor: default;
+}
+
+.stat-item svg { width: 14px; height: 14px; }
+
+/* ============================================================
+   Load More
+   ============================================================ */
+
+.load-more-wrap {
+  text-align: center;
+  padding: 28px 0 16px;
+}
+
+.load-more-btn {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 10px 36px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--card);
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out),
+              color var(--dur-fast) var(--ease-out),
+              background var(--dur-fast) var(--ease-out);
+}
+
+.load-more-btn:hover {
+  border-color: var(--gold);
+  color: var(--gold-dk);
+  background: var(--gold-wash);
+}
+
+/* ============================================================
+   Skeleton Loading (for loading.tsx reference)
+   ============================================================ */
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skel {
+  background: linear-gradient(90deg, var(--hairl) 25%, var(--border) 50%, var(--hairl) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+  border-radius: var(--r-xs);
+}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+
+@media (max-width: 640px) {
+  .app-shell { padding: 0 16px 96px; }
+
+  .nav-inner { flex-direction: column; align-items: stretch; }
+  .nav-tabs { align-self: center; }
+
+  .filter-bar { padding: 14px 16px; }
+  .filter-search-wrap { max-width: 100%; flex: 100%; margin-left: 0; }
+  .filter-date { flex: 1; min-width: 0; }
+
+  .post-card { padding: 16px 18px; }
+  .post-content { font-size: 0.92rem; }
+  .post-img { width: 96px; height: 96px; }
+
+  .post-footer { flex-wrap: wrap; gap: 10px; }
+  .post-stats { gap: 10px; }
+
+  .stats-bar { gap: 12px; font-size: 0.8rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ============================================================
+       Navigation
+       ============================================================ -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="#">
+        <span class="nav-brand-mark">
+          <!-- Weibo bird icon — refined minimal -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3c-1.5 3-2 6-2 9 0 0 1-2 4-2s5 3 5 6c0 4-3.5 6-7 6-4.5 0-8-3-8-8C4 9 7 4 12 3Z"/>
+            <circle cx="17" cy="9" r="1.5" fill="currentColor" stroke="none"/>
+          </svg>
+        </span>
+        Weibo Backup
+      </a>
+      <div class="nav-tabs">
+        <button class="nav-tab active">
+          <!-- Grid icon -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1"/>
+            <rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="3" y="14" width="7" height="7" rx="1"/>
+            <rect x="14" y="14" width="7" height="7" rx="1"/>
+          </svg>
+          浏览
+        </button>
+        <button class="nav-tab">
+          <!-- Refresh/sync icon -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+          </svg>
+          同步
+        </button>
+        <button class="nav-tab">
+          <!-- User icon -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="4"/>
+            <path d="M20 21a8 8 0 1 0-16 0"/>
+          </svg>
+          账号
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ============================================================
+       Filter Bar
+       ============================================================ -->
+  <div class="filter-bar">
+    <div class="filter-row">
+      <select class="filter-select" aria-label="选择账号">
+        <option>全部账号</option>
+        <option>🧑 我的日常号</option>
+        <option>🐦 技术分享号</option>
+      </select>
+
+      <div class="seg-control" id="typeFilter" role="radiogroup" aria-label="帖子类型">
+        <button class="seg-btn active" role="radio" aria-checked="true">
+          <!-- File text icon -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          全部
+        </button>
+        <button class="seg-btn" role="radio" aria-checked="false">
+          <!-- Pen/edit icon -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+          原创
+        </button>
+        <button class="seg-btn" role="radio" aria-checked="false">
+          <!-- Repeat/repost icon -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          转发
+        </button>
+      </div>
+    </div>
+
+    <div class="filter-row">
+      <input type="date" class="filter-date" value="2020-01-01" aria-label="开始日期">
+      <span class="filter-sep">至</span>
+      <input type="date" class="filter-date" value="2026-06-10" aria-label="结束日期">
+
+      <div class="filter-search-wrap">
+        <!-- Search icon -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" class="filter-search" placeholder="搜索微博内容..." aria-label="搜索">
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       Stats Summary
+       ============================================================ -->
+  <div class="stats-bar">
+    <span>共 <strong>1,247</strong> 条微博</span>
+    <span>来自 <strong>2</strong> 个账号</span>
+    <span><strong>2020.03</strong> — <strong>2026.06</strong></span>
+  </div>
+
+  <!-- ============================================================
+       Timeline
+       ============================================================ -->
+  <div class="timeline">
+
+    <!-- ── 2026 ── -->
+    <div class="year-divider"><span class="year-label">2026</span></div>
+
+    <!-- Post 1: Original + 3 images -->
+    <article class="post-card">
+      <div class="post-header">
+        <div class="post-avatar av-a">日</div>
+        <div class="post-meta">
+          <div class="post-author">我的日常号</div>
+          <div class="post-time">2026年6月8日 21:30</div>
+        </div>
+        <div class="post-badges">
+          <span class="badge badge-original">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+            原创
+          </span>
+        </div>
+      </div>
+      <div class="post-content">周末去了趟国家图书馆，找到了找了很久的《设计中的设计》原版 📚
+馆内的光影太美了，安静得只听得见翻书声。待了一整个下午，感觉灵魂都被洗涤了。</div>
+      <div class="post-images">
+        <img class="post-img" src="https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=300&h=300&fit=crop" alt="图书馆内景" loading="lazy" onerror="this.style.display='none'">
+        <img class="post-img" src="https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=300&h=300&fit=crop" alt="书架特写" loading="lazy" onerror="this.style.display='none'">
+        <img class="post-img" src="https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=300&h=300&fit=crop" alt="阅读角落" loading="lazy" onerror="this.style.display='none'">
+      </div>
+      <div class="post-footer">
+        <span class="post-source">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          来自 iPhone 客户端
+        </span>
+        <div class="post-stats">
+          <span class="stat-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+            12
+          </span>
+          <span class="stat-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            8
+          </span>
+          <span class="stat-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            45
+          </span>
+        </div>
+      </div>
+    </article>
+
+    <!-- Post 2: Original + long text -->
+    <article class="post-card">
+      <div class="post-header">
+        <div class="post-avatar av-a">日</div>
+        <div class="post-meta">
+          <div class="post-author">我的日常号</div>
+          <div class="post-time">2026年6月5日 14:15</div>
+        </div>
+        <div class="post-badges">
+          <span class="badge badge-original">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+            原创
+          </span>
+          <span class="badge badge-long">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            长文
+          </span>
+        </div>
+      </div>
+      <div class="post-content"><span style="font-family:var(--font-serif);font-size:1.05em;font-weight:600;color:var(--ink);display:block;margin-bottom:10px;">分享最近学到的时间管理方法</span>
+核心就是一个简单的原则：每天只定三个最重要的事。不是列出一堆待办然后焦虑地刷手机，而是前一天晚上花五分钟，认真想清楚明天必须完成的三件事是什么。
+
+我用这个方法坚持了两个月，最大的感受不是效率提高了多少，而是焦虑感明显下降了。因为你知道自己只需要专注三件事，不会有种「永远做不完」的压迫感。
+
+另外还有一个技巧：把最难的那件事放在早上第一个做。吃完早餐就干，不给自己犹豫的时间。做完了最难的，接下来一整天都是轻松模式 😌</div>
+      <div class="post-footer">
+        <span class="post-source">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          来自 iPhone 客户端
+        </span>
+        <div class="post-stats">
+          <span class="stat-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+            28
+          </span>
+          <span class="stat-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            15
+          </span>
+          <span class="stat-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            102
+          </span>
+        </div>
+      </div>
+    </article>
+
+    <!-- ── 2024 ── -->
+    <div class="year-divider"><span class="year-label">2024</span></div>
+
+    <!-- Post 3: Repost with expandable content -->
+    <article class="post-card">
+      <div class="post-header">
+        <div class="post-avatar av-b">技</div>
+        <div class="post-meta">
+          <div class="post-author">技术分享号</div>
+          <div class="post-time">2024年11月20日 10:05</div>
+        </div>
+        <div class="post-badges">
+          <span class="badge badge-repost">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+            转发
+          </span>
+        </div>
+      </div>
+      <div class="post-content">这篇文章总结得太好了，每个做前端的人都应该看看 🔥</div>
+
+      <div class="repost-block" onclick="this.classList.toggle('expanded'); updateRepostHint(this)" role="button" tabindex="0" aria-expanded="false" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('expanded');updateRepostHint(this)}">
+        <div class="repost-header">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          转发了 <strong>@FrostMing</strong> 的微博
+        </div>
+        <div class="repost-preview">花了三个月时间，把公司前端项目的构建时间从 8 分钟降到了 40 秒。分享一下具体的优化路径：<br><br>1. 首先分析瓶颈：用 speed-measure-webpack-plugin 发现 ts-loader 占了 70% 的时间<br>2. 换成 swc-loader 后降到 3 分钟<br>3. 开启持久化缓存（filesystem cache）降到 1.5 分钟<br>4. 代码分割优化 + 懒加载，降到 40 秒<br><br>最关键的其实不是工具本身，而是建立了一套性能监控的基线。每次改构建配置都能立刻看到影响，不会瞎折腾。<br><br>另外推荐 esbuild 做库的预打包，速度提升非常明显。后面计划试试 Turbopack 和 Rspack。</div>
+        <div class="repost-expand-hint">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          <span>展开原文</span>
+        </div>
+      </div>
+
+      <div class="post-footer">
+        <span class="post-source">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          来自网页
+        </span>
+        <div class="post-stats">
+          <span class="stat-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> 3</span>
+          <span class="stat-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> 1</span>
+          <span class="stat-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> 12</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- Post 4: Original + 2 images -->
+    <article class="post-card">
+      <div class="post-header">
+        <div class="post-avatar av-a">日</div>
+        <div class="post-meta">
+          <div class="post-author">我的日常号</div>
+          <div class="post-time">2024年3月15日 18:42</div>
+        </div>
+        <div class="post-badges">
+          <span class="badge badge-original">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+            原创
+          </span>
+        </div>
+      </div>
+      <div class="post-content">胡同深处藏着这家独立书店也太宝藏了 🏚️✨
+找到了第一版的《百年孤独》，1984年上海译文出版社的版本，封面已经泛黄了。
+老板娘说这家店开了快三十年，很多老客人的孩子都上大学了还来买书。
+这才是真正的城市记忆吧。</div>
+      <div class="post-images">
+        <img class="post-img" src="https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=300&h=300&fit=crop" alt="书店门面" loading="lazy" onerror="this.style.display='none'">
+        <img class="post-img" src="https://images.unsplash.com/photo-1512820790803-83ca734da794?w=300&h=300&fit=crop" alt="泛黄旧书" loading="lazy" onerror="this.style.display='none'">
+      </div>
+      <div class="post-footer">
+        <span class="post-source">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          来自 iPhone 客户端
+        </span>
+        <div class="post-stats">
+          <span class="stat-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> 56</span>
+          <span class="stat-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> 23</span>
+          <span class="stat-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> 189</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- Post 5: Simple original text only -->
+    <article class="post-card">
+      <div class="post-header">
+        <div class="post-avatar av-b">技</div>
+        <div class="post-meta">
+          <div class="post-author">技术分享号</div>
+          <div class="post-time">2024年2月8日 23:59</div>
+        </div>
+        <div class="post-badges">
+          <span class="badge badge-original">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+            原创
+          </span>
+        </div>
+      </div>
+      <div class="post-content">深夜发布一个小工具 🛠️
+
+<a href="#">github.com/my/weibo-tools</a>
+
+一个命令行工具，可以批量下载微博的原始图片。支持：
+· 按时间范围筛选
+· 自动跳过已下载的
+· 保持原始文件名
+
+写这个小工具的原因是微博网页版下载图片太痛苦了，一次只能下一张。代码很糙但是能用，欢迎提 PR 🙏
+
+<span style="color:var(--muted);">#开源 #前端 #效率工具</span></div>
+      <div class="post-footer">
+        <span class="post-source">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          来自网页
+        </span>
+        <div class="post-stats">
+          <span class="stat-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> 89</span>
+          <span class="stat-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> 34</span>
+          <span class="stat-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> 267</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- ── 2020 — the beginning ── -->
+    <div class="year-divider"><span class="year-label">2020</span></div>
+
+    <!-- Post 6: First weibo ever -->
+    <article class="post-card">
+      <div class="post-header">
+        <div class="post-avatar av-a">日</div>
+        <div class="post-meta">
+          <div class="post-author">我的日常号</div>
+          <div class="post-time">2020年3月1日 08:30</div>
+        </div>
+        <div class="post-badges">
+          <span class="badge badge-original">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+            原创
+          </span>
+        </div>
+      </div>
+      <div class="post-content">今天开始用微博记录生活 📝 希望这是一个美好的开始 ✨</div>
+      <div class="post-images">
+        <img class="post-img" src="https://images.unsplash.com/photo-1506784365847-b4d651c27c55?w=300&h=300&fit=crop" alt="清晨阳光" loading="lazy" onerror="this.style.display='none'">
+      </div>
+      <div class="post-footer">
+        <span class="post-source">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          来自 iPhone 客户端
+        </span>
+        <div class="post-stats">
+          <span class="stat-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> 0</span>
+          <span class="stat-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> 4</span>
+          <span class="stat-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> 8</span>
+        </div>
+      </div>
+    </article>
+
+  </div>
+
+  <!-- Load More -->
+  <div class="load-more-wrap">
+    <button class="load-more-btn">加载更多</button>
+  </div>
+
+</div>
+
+<script>
+// Segmented control — single selection
+document.querySelectorAll('.seg-control').forEach(group => {
+  group.addEventListener('click', e => {
+    const btn = e.target.closest('.seg-btn');
+    if (!btn) return;
+    group.querySelectorAll('.seg-btn').forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-checked', 'false');
+    });
+    btn.classList.add('active');
+    btn.setAttribute('aria-checked', 'true');
+  });
+});
+
+// Nav tabs
+document.querySelectorAll('.nav-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+  });
+});
+
+// Repost expand/collapse — unified handler
+function updateRepostHint(block) {
+  const hint = block.querySelector('.repost-expand-hint span');
+  const isExpanded = block.classList.contains('expanded');
+  if (hint) hint.textContent = isExpanded ? '收起原文' : '展开原文';
+  block.setAttribute('aria-expanded', isExpanded.toString());
+}
+</script>
+
+</body>
+</html>

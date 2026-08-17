@@ -1,0 +1,33 @@
+# deps
+node_modules/
+.next/
+
+# env
+.env
+.env.local
+.env*.local
+
+# DB
+data.db
+data.db-shm
+data.db-wal
+*.db.bak.*
+
+# uploads (user data)
+public/uploads/weibo/
+
+# exports (contain personal data)
+*-export.html
+*-weibo.zip
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# build
+out/
+.vercel
